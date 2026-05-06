@@ -30,20 +30,21 @@ export function useAuth() {
     useState(subscribe)
 
     const login = useCallback(async (email: string, password: string): Promise<void> => {
-        // TODO: replace with real API call
-        // const res = await fetch('/api/auth/login', { method:'POST', body: JSON.stringify({ email, password }) })
-        // const data = await res.json()
-        // globalState = { isAuthenticated: true, user: data.user, token: data.token }
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        })
 
-        if (!email || !password) throw new Error('Please fill in all fields')
-        if (password.length < 4) throw new Error('Password must be at least 4 characters')
+        if (res.status === 401) throw new Error('Invalid email or password.')
+        if (!res.ok) throw new Error('Something went wrong. Please try again.')
 
-        await new Promise(r => setTimeout(r, 800))
+        const data = await res.json()
 
         globalState = {
             isAuthenticated: true,
-            user: { name: 'LC', email },
-            token: 'mock-jwt-token',
+            user: { name: data.user.email.split('@')[0], email: data.user.email },
+            token: data.accessToken,
         }
         sessionStorage.setItem('gh_auth', JSON.stringify(globalState))
         notifyListeners()
