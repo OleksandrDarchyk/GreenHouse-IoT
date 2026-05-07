@@ -2,10 +2,9 @@
 using System.Security.Claims;
 using System.Text;
 using DataAccess.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace DataAccess.Services;
+namespace api.Services;
 
 public interface ITokenService
 {

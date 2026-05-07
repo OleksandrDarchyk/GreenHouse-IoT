@@ -1,11 +1,12 @@
 using System.Reflection;
 using System.Text;
+using api.Services;
 using DataAccess.Data;
-using DataAccess.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Mqtt.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,6 +84,9 @@ builder.Services.AddCors(opt =>
               .AllowAnyHeader()
               .AllowAnyMethod()));
 
+// MQTT Controllers with Flespi
+builder.Services.AddMqttControllers();
+
 var app = builder.Build();
 
 // ── Auto-migrate on startup ───────────────────────────────────────────────────
@@ -106,5 +110,31 @@ app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Connect MQTT to Flespi
+var mqttHost = builder.Configuration["Mqtt:Host"] ?? "mqtt.flespi.io";
+var mqttPort = int.TryParse(builder.Configuration["Mqtt:Port"], out var p) ? p : 1883;
+
+var flespiToken = builder.Configuration["Flespi:Token"]
+                  ?? throw new InvalidOperationException("Flespi:Token is required.");
+
+try
+{
+    var mqtt = app.Services.GetRequiredService<IMqttClientService>();
+
+    await mqtt.ConnectAsync(
+        host: mqttHost,
+        port: mqttPort,
+        username: flespiToken,
+        password: "",
+        useTls: false
+    );
+
+    app.Logger.LogInformation("MQTT connected to Flespi at {Host}:{Port}", mqttHost, mqttPort);
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "MQTT connect failed; MQTT subscriptions disabled.");
+}
 
 app.Run();
