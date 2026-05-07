@@ -1,10 +1,10 @@
-namespace dataAccess.Models;
+namespace DataAccess.Models;
 
 public class SensorReading
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public string DeviceId { get; set; } = "greenhouse-01";
+    public string DeviceId { get; set; } = "";
 
     public double Temperature { get; set; }      // °C
     public double Humidity { get; set; }         // %

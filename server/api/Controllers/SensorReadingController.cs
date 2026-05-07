@@ -1,5 +1,4 @@
 using DataAccess.Data;
-using dataAccess.Models;
 using DataAccess.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
