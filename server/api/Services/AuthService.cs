@@ -2,7 +2,7 @@
 using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace DataAccess.Services;
+namespace api.Services;
 
 public interface IAuthService
 {
