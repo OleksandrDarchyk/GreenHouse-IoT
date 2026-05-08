@@ -7,6 +7,6 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public string Role { get; set; } = "Operator";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? LastLoginAt { get; set; }
+    public DateTime? LastLoginAt { get; set; } 
     public bool IsActive { get; set; } = true;
 }

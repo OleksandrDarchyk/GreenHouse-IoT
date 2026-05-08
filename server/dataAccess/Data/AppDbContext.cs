@@ -1,6 +1,5 @@
-﻿using dataAccess.Models;
+﻿using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
-using DataAccess.Models;
 
 namespace DataAccess.Data;
 
@@ -10,6 +9,8 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<SensorReading> SensorReadings => Set<SensorReading>();
+    public DbSet<Alert> Alerts => Set<Alert>();
+    DbSet<Command> Commands => Set<Command>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,8 +62,7 @@ public class AppDbContext : DbContext
             entity.HasKey(s => s.Id);
 
             entity.Property(s => s.Id)
-                .HasColumnName("id")
-                .UseIdentityAlwaysColumn();
+                .HasColumnName("id");
 
             entity.Property(s => s.DeviceId)
                 .HasColumnName("device_id")
@@ -87,6 +87,84 @@ public class AppDbContext : DbContext
             entity.Property(s => s.Timestamp)
                 .HasColumnName("timestamp")
                 .HasDefaultValueSql("NOW()");
+        });
+        
+        // ---------------- ALERT ----------------
+        modelBuilder.Entity<Alert>(entity =>
+        {
+            entity.ToTable("alerts");
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.Id)
+                .HasColumnName("id");
+
+            entity.Property(a => a.DeviceId)
+                .HasColumnName("device_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(a => a.Severity)
+                .HasColumnName("severity")
+                .HasMaxLength(50)
+                .HasDefaultValue("Warning");
+
+            entity.Property(a => a.Message)
+                .HasColumnName("message")
+                .IsRequired();
+
+            entity.Property(a => a.IsResolved)
+                .HasColumnName("is_resolved")
+                .HasDefaultValue(false);
+
+            entity.Property(a => a.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(a => a.ResolvedAt)
+                .HasColumnName("resolved_at");
+        });
+        
+        // ---------------- COMMAND ----------------
+        modelBuilder.Entity<Command>(entity =>
+        {
+            entity.ToTable("commands");
+            entity.HasKey(c => c.Id);
+
+            entity.Property(c => c.Id)
+                .HasColumnName("id");
+
+            entity.Property(c => c.DeviceId)
+                .HasColumnName("device_id")
+                .HasMaxLength(100)
+                .IsRequired();
+            
+            entity.Property(c => c.UserId)
+                .HasColumnName("user_id")
+                .IsRequired();
+            
+            entity.Property(c => c.Timestamp)
+                .HasColumnName("timestamp")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(c => c.Action)
+                .HasColumnName("action")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(c => c.Payload)
+                .HasColumnName("payload")
+                .HasColumnType("jsonb")
+                .HasDefaultValueSql("'{}'::jsonb");
+
+            entity.Property(c => c.Status)
+                .HasColumnName("status")
+                .HasMaxLength(50)
+                .HasDefaultValue("Pending");
+
+            entity.HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

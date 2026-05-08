@@ -1,7 +1,7 @@
 using System.Text.Json;
 using api.DTOs;
 using DataAccess.Data;
-using dataAccess.Models;
+using DataAccess.Models;
 using Mqtt.Controllers;
 
 namespace api.Controllers;
