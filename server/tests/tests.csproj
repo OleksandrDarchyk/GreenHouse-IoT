@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\dataAccess\dataAccess.csproj" />
+    <ProjectReference Include="..\api\api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

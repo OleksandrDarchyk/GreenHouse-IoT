@@ -1,4 +1,5 @@
 ﻿import { useState, useCallback } from 'react'
+import { BASE_URL } from '../config/api'
 
 interface AuthState {
     isAuthenticated: boolean
@@ -30,7 +31,7 @@ export function useAuth() {
     useState(subscribe)
 
     const login = useCallback(async (email: string, password: string): Promise<void> => {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        const res = await fetch(`${BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),

@@ -1,4 +1,5 @@
 ﻿using Xunit;
+using api.Services;
 
 namespace Tests;
 
