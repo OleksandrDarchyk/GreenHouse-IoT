@@ -162,7 +162,7 @@ public class AppDbContext : DbContext
                 .HasDefaultValue("Pending");
 
             entity.HasOne(c => c.User)
-                .WithMany()
+                .WithMany(u => u.Commands)
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
