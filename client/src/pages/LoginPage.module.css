@@ -35,7 +35,11 @@
 .heading { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: #111827; margin-bottom: 6px; }
 .sub     { font-size: 13px; color: #6b7280; margin-bottom: 28px; }
 
-.errorBanner { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #dc2626; margin-bottom: 20px; }
+.errorBanner {
+    background: #fee2e2; border: 1px solid #fca5a5;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #dc2626; margin-bottom: 20px;
+}
 
 .form  { display: flex; flex-direction: column; gap: 18px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -52,6 +56,30 @@
 .inputError { border-color: #fca5a5; }
 .inputError:focus { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
 .fieldError { font-size: 11px; color: #ef4444; font-family: var(--font-mono); }
+
+.passwordWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.inputPassword {
+    padding-right: 44px;
+}
+.eyeBtn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+.eyeBtn:hover { color: #374151; }
 
 .btn {
     background: #22c55e; color: white; border-radius: 10px; padding: 13px;
@@ -71,5 +99,3 @@
     animation: spin 0.7s linear infinite; display: block;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-.hint { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 20px; font-family: var(--font-mono); }
