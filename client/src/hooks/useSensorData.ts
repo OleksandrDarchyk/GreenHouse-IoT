@@ -1,4 +1,5 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { BASE_URL, SSE_URL } from '../config/api'
 
 export type SensorStatus = 'normal' | 'good' | 'warning' | 'poor' | 'critical'
 
@@ -20,8 +21,12 @@ export interface SensorData {
     lightLevel: SensorReading
 }
 
-function drift(v: number, center: number, range: number, speed = 0.3) {
-    return Math.min(Math.max(v + (Math.random() - 0.5) * speed + (center - v) * 0.02, center - range), center + range)
+interface BackendReading {
+    temperature: number
+    humidity: number
+    soilMoisture: number
+    airQuality: number
+    lightLevel: number
 }
 
 function tempStatus(v: number): SensorStatus {
@@ -51,36 +56,48 @@ function buildReading(key: keyof SensorData, value: number): SensorReading {
     return { value, ...configs[key] }
 }
 
-let _temp = 29.4, _hum = 55.4, _soil = 32, _air = 157.7, _light = 412.9
-
-function generateSensorData(): SensorData {
-    _temp  = drift(_temp,  29,  6)
-    _hum   = drift(_hum,   55, 15)
-    _soil  = drift(_soil,  35, 20, 0.8)
-    _air   = drift(_air,  140, 60, 2)
-    _light = drift(_light,400,150, 5)
-
+function mapToSensorData(raw: BackendReading): SensorData {
     return {
-        temperature:  buildReading('temperature',  +_temp.toFixed(1)),
-        humidity:     buildReading('humidity',      +_hum.toFixed(1)),
-        soilMoisture: buildReading('soilMoisture',  +_soil.toFixed(1)),
-        airQuality:   buildReading('airQuality',    +_air.toFixed(1)),
-        lightLevel:   buildReading('lightLevel',    +_light.toFixed(1)),
+        temperature:  buildReading('temperature',  raw.temperature),
+        humidity:     buildReading('humidity',      raw.humidity),
+        soilMoisture: buildReading('soilMoisture',  raw.soilMoisture),
+        airQuality:   buildReading('airQuality',    raw.airQuality),
+        lightLevel:   buildReading('lightLevel',    raw.lightLevel),
     }
 }
 
-export function useSensorData(intervalMs = 2000) {
-    const [data, setData] = useState<SensorData>(generateSensorData)
+export function useSensorData(deviceId?: string) {
+    const [data, setData] = useState<SensorData | null>(null)
 
     useEffect(() => {
-        // TODO: Replace with real WebSocket:
-        // const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}/sensors`)
-        // ws.onmessage = e => setData(JSON.parse(e.data))
-        // return () => ws.close()
+        const es = new EventSource(SSE_URL)
 
-        const id = setInterval(() => setData(generateSensorData()), intervalMs)
-        return () => clearInterval(id)
-    }, [intervalMs])
+        es.onmessage = async (e) => {
+            const { connectionId } = JSON.parse(e.data)
+
+            const params = new URLSearchParams({ connectionId })
+            if (deviceId) params.set('deviceId', deviceId)
+
+            const res = await fetch(
+                `${BASE_URL}/api/SensorReading/GetSensorReadingLatest?${params}`
+            )
+            if (!res.ok) return
+
+            const { group, value } = await res.json()
+            if (value) setData(mapToSensorData(value))
+
+            es.addEventListener(group, (upd: MessageEvent) => {
+                try {
+                    const raw = JSON.parse(upd.data)
+                    if (raw) setData(mapToSensorData(raw))
+                } catch { /* ignore */ }
+            })
+        }
+
+        es.onerror = () => es.close()
+
+        return () => es.close()
+    }, [deviceId])
 
     return data
 }
