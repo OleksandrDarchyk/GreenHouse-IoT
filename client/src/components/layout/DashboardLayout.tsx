@@ -3,15 +3,17 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import styles from './DashboardLayout.module.css'
 
-export type NavTab = 'overview' | 'analytics' | 'controls' | 'devices'
+export type NavTab = 'overview' | 'analytics' | 'controls' | 'automation' | 'alerts' | 'devices'
 
 interface NavItem { id: NavTab; label: string; icon: string; path: string }
 
 const NAV_ITEMS: NavItem[] = [
-    { id: 'overview',  label: 'Overview',  icon: '◈', path: '/dashboard' },
-    { id: 'analytics', label: 'Analytics', icon: '⌇', path: '/dashboard/analytics' },
-    { id: 'controls',  label: 'Controls',  icon: '⚙', path: '/dashboard/controls' },
-    { id: 'devices',   label: 'Devices',   icon: '⊞', path: '/dashboard/devices' },
+    { id: 'overview',    label: 'Overview',             icon: '◈', path: '/dashboard' },
+    { id: 'analytics',  label: 'Historical Data',       icon: '⌇', path: '/dashboard/analytics' },
+    { id: 'controls',   label: 'Manual Controls',       icon: '⚙', path: '/dashboard/controls' },
+    { id: 'automation', label: 'Automation Settings',   icon: '⚡', path: '/dashboard/automation' },
+    { id: 'alerts',     label: 'Alerts',                icon: '⚐', path: '/dashboard/alerts' },
+    { id: 'devices',    label: 'Device Overview',       icon: '⊞', path: '/dashboard/devices' },
 ]
 
 interface Props { children: ReactNode; alertCount?: number }
