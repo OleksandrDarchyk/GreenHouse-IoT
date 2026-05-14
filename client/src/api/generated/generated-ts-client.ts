@@ -7,6 +7,285 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
+export interface IAuthClient {
+
+    /**
+     * Register a new user.
+     * @return User created, returns JWT.
+     */
+    register(req: RegisterRequest): Promise<AuthResponse>;
+
+    /**
+     * Login with email and password.
+     * @return Returns JWT.
+     */
+    login(req: LoginRequest): Promise<AuthResponse>;
+}
+
+export class AuthClient implements IAuthClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Register a new user.
+     * @return User created, returns JWT.
+     */
+    register(req: RegisterRequest): Promise<AuthResponse> {
+        let url_ = this.baseUrl + "/api/Auth/register";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(req);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRegister(_response);
+        });
+    }
+
+    protected processRegister(response: Response): Promise<AuthResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = AuthResponse.fromJS(resultData201);
+            return result201;
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("Email already registered.", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuthResponse>(null as any);
+    }
+
+    /**
+     * Login with email and password.
+     * @return Returns JWT.
+     */
+    login(req: LoginRequest): Promise<AuthResponse> {
+        let url_ = this.baseUrl + "/api/Auth/login";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(req);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processLogin(_response);
+        });
+    }
+
+    protected processLogin(response: Response): Promise<AuthResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = AuthResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Invalid credentials.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuthResponse>(null as any);
+    }
+}
+
+export interface IAlertClient {
+
+    getAlerts(take: number | undefined): Promise<AlertDto[]>;
+}
+
+export class AlertClient implements IAlertClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getAlerts(take: number | undefined): Promise<AlertDto[]> {
+        let url_ = this.baseUrl + "/api/Alert?";
+        if (take === null)
+            throw new globalThis.Error("The parameter 'take' cannot be null.");
+        else if (take !== undefined)
+            url_ += "take=" + encodeURIComponent("" + take) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAlerts(_response);
+        });
+    }
+
+    protected processGetAlerts(response: Response): Promise<AlertDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(AlertDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertDto[]>(null as any);
+    }
+}
+
+export interface IDeviceClient {
+
+    getDeviceStatus(): Promise<FileResponse>;
+
+    checkDevices(): Promise<FileResponse>;
+}
+
+export class DeviceClient implements IDeviceClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getDeviceStatus(): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/Device/status";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetDeviceStatus(_response);
+        });
+    }
+
+    protected processGetDeviceStatus(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
+    }
+
+    checkDevices(): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/Device/check";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCheckDevices(_response);
+        });
+    }
+
+    protected processCheckDevices(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
+    }
+}
+
 export interface ISensorReadingClient {
 
     getSensorReadings(deviceId: string | null | undefined, take: number | undefined, from: Date | null | undefined, to: Date | null | undefined): Promise<SensorReading[]>;
@@ -146,267 +425,6 @@ export class SensorReadingClient implements ISensorReadingClient {
         }
         return Promise.resolve<void>(null as any);
     }
-}
-
-export interface IAuthClient {
-
-    /**
-     * Register a new user.
-     * @return User created, returns JWT.
-     */
-    register(req: RegisterRequest): Promise<AuthResponse>;
-
-    /**
-     * Login with email and password.
-     * @return Returns JWT.
-     */
-    login(req: LoginRequest): Promise<AuthResponse>;
-}
-
-export class AuthClient implements IAuthClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Register a new user.
-     * @return User created, returns JWT.
-     */
-    register(req: RegisterRequest): Promise<AuthResponse> {
-        let url_ = this.baseUrl + "/api/Auth/register";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(req);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processRegister(_response);
-        });
-    }
-
-    protected processRegister(response: Response): Promise<AuthResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result201 = AuthResponse.fromJS(resultData201);
-            return result201;
-            });
-        } else if (status === 409) {
-            return response.text().then((_responseText) => {
-            let result409: any = null;
-            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result409 = ProblemDetails.fromJS(resultData409);
-            return throwException("Email already registered.", status, _responseText, _headers, result409);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AuthResponse>(null as any);
-    }
-
-    /**
-     * Login with email and password.
-     * @return Returns JWT.
-     */
-    login(req: LoginRequest): Promise<AuthResponse> {
-        let url_ = this.baseUrl + "/api/Auth/login";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(req);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processLogin(_response);
-        });
-    }
-
-    protected processLogin(response: Response): Promise<AuthResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = AuthResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Invalid credentials.", status, _responseText, _headers, result401);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AuthResponse>(null as any);
-    }
-}
-
-export class SensorReading implements ISensorReading {
-    id?: string;
-    deviceId?: string;
-    temperature?: number;
-    humidity?: number;
-    soilMoisture?: number;
-    airQuality?: number;
-    lightLevel?: number;
-    timestamp?: Date;
-
-    constructor(data?: ISensorReading) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.deviceId = _data["deviceId"];
-            this.temperature = _data["temperature"];
-            this.humidity = _data["humidity"];
-            this.soilMoisture = _data["soilMoisture"];
-            this.airQuality = _data["airQuality"];
-            this.lightLevel = _data["lightLevel"];
-            this.timestamp = _data["timestamp"] ? new Date(_data["timestamp"].toString()) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): SensorReading {
-        data = typeof data === 'object' ? data : {};
-        let result = new SensorReading();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["deviceId"] = this.deviceId;
-        data["temperature"] = this.temperature;
-        data["humidity"] = this.humidity;
-        data["soilMoisture"] = this.soilMoisture;
-        data["airQuality"] = this.airQuality;
-        data["lightLevel"] = this.lightLevel;
-        data["timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
-        return data;
-    }
-}
-
-export interface ISensorReading {
-    id?: string;
-    deviceId?: string;
-    temperature?: number;
-    humidity?: number;
-    soilMoisture?: number;
-    airQuality?: number;
-    lightLevel?: number;
-    timestamp?: Date;
-}
-
-/** Returned by subscribe endpoints so the client knows which SSE group to listen on. */
-export class RealtimeListenResponse implements IRealtimeListenResponse {
-    group?: string;
-
-    constructor(data?: IRealtimeListenResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.group = _data["group"];
-        }
-    }
-
-    static fromJS(data: any): RealtimeListenResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new RealtimeListenResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["group"] = this.group;
-        return data;
-    }
-}
-
-/** Returned by subscribe endpoints so the client knows which SSE group to listen on. */
-export interface IRealtimeListenResponse {
-    group?: string;
-}
-
-/** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
-export class RealtimeListenResponseOfSensorReading extends RealtimeListenResponse implements IRealtimeListenResponseOfSensorReading {
-    data?: SensorReading;
-
-    constructor(data?: IRealtimeListenResponseOfSensorReading) {
-        super(data);
-    }
-
-    override init(_data?: any) {
-        super.init(_data);
-        if (_data) {
-            this.data = _data["data"] ? SensorReading.fromJS(_data["data"]) : undefined as any;
-        }
-    }
-
-    static override fromJS(data: any): RealtimeListenResponseOfSensorReading {
-        data = typeof data === 'object' ? data : {};
-        let result = new RealtimeListenResponseOfSensorReading();
-        result.init(data);
-        return result;
-    }
-
-    override toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["data"] = this.data ? this.data.toJSON() : undefined as any;
-        super.toJSON(data);
-        return data;
-    }
-}
-
-/** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
-export interface IRealtimeListenResponseOfSensorReading extends IRealtimeListenResponse {
-    data?: SensorReading;
 }
 
 export class AuthResponse implements IAuthResponse {
@@ -647,6 +665,210 @@ export class LoginRequest implements ILoginRequest {
 export interface ILoginRequest {
     email?: string;
     password?: string;
+}
+
+export class AlertDto implements IAlertDto {
+    id?: string;
+    deviceId?: string;
+    severity?: string;
+    message?: string;
+    isResolved?: boolean;
+    createdAt?: Date;
+    resolvedAt?: Date | undefined;
+
+    constructor(data?: IAlertDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.deviceId = _data["deviceId"];
+            this.severity = _data["severity"];
+            this.message = _data["message"];
+            this.isResolved = _data["isResolved"];
+            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+            this.resolvedAt = _data["resolvedAt"] ? new Date(_data["resolvedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): AlertDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AlertDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["deviceId"] = this.deviceId;
+        data["severity"] = this.severity;
+        data["message"] = this.message;
+        data["isResolved"] = this.isResolved;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        data["resolvedAt"] = this.resolvedAt ? this.resolvedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IAlertDto {
+    id?: string;
+    deviceId?: string;
+    severity?: string;
+    message?: string;
+    isResolved?: boolean;
+    createdAt?: Date;
+    resolvedAt?: Date | undefined;
+}
+
+export class SensorReading implements ISensorReading {
+    id?: string;
+    deviceId?: string;
+    temperature?: number;
+    humidity?: number;
+    soilMoisture?: number;
+    airQuality?: number;
+    lightLevel?: number;
+    timestamp?: Date;
+
+    constructor(data?: ISensorReading) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.deviceId = _data["deviceId"];
+            this.temperature = _data["temperature"];
+            this.humidity = _data["humidity"];
+            this.soilMoisture = _data["soilMoisture"];
+            this.airQuality = _data["airQuality"];
+            this.lightLevel = _data["lightLevel"];
+            this.timestamp = _data["timestamp"] ? new Date(_data["timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): SensorReading {
+        data = typeof data === 'object' ? data : {};
+        let result = new SensorReading();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["deviceId"] = this.deviceId;
+        data["temperature"] = this.temperature;
+        data["humidity"] = this.humidity;
+        data["soilMoisture"] = this.soilMoisture;
+        data["airQuality"] = this.airQuality;
+        data["lightLevel"] = this.lightLevel;
+        data["timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface ISensorReading {
+    id?: string;
+    deviceId?: string;
+    temperature?: number;
+    humidity?: number;
+    soilMoisture?: number;
+    airQuality?: number;
+    lightLevel?: number;
+    timestamp?: Date;
+}
+
+/** Returned by subscribe endpoints so the client knows which SSE group to listen on. */
+export class RealtimeListenResponse implements IRealtimeListenResponse {
+    group?: string;
+
+    constructor(data?: IRealtimeListenResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.group = _data["group"];
+        }
+    }
+
+    static fromJS(data: any): RealtimeListenResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RealtimeListenResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["group"] = this.group;
+        return data;
+    }
+}
+
+/** Returned by subscribe endpoints so the client knows which SSE group to listen on. */
+export interface IRealtimeListenResponse {
+    group?: string;
+}
+
+/** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
+export class RealtimeListenResponseOfSensorReading extends RealtimeListenResponse implements IRealtimeListenResponseOfSensorReading {
+    data?: SensorReading;
+
+    constructor(data?: IRealtimeListenResponseOfSensorReading) {
+        super(data);
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+        if (_data) {
+            this.data = _data["data"] ? SensorReading.fromJS(_data["data"]) : undefined as any;
+        }
+    }
+
+    static override fromJS(data: any): RealtimeListenResponseOfSensorReading {
+        data = typeof data === 'object' ? data : {};
+        let result = new RealtimeListenResponseOfSensorReading();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["data"] = this.data ? this.data.toJSON() : undefined as any;
+        super.toJSON(data);
+        return data;
+    }
+}
+
+/** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
+export interface IRealtimeListenResponseOfSensorReading extends IRealtimeListenResponse {
+    data?: SensorReading;
+}
+
+export interface FileResponse {
+    data: Blob;
+    status: number;
+    fileName?: string;
+    headers?: { [name: string]: any };
 }
 
 export class ApiException extends Error {

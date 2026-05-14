@@ -27,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>((sp, opt) =>
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ITokenService,    TokenService>();
 builder.Services.AddScoped<IAuthService,     AuthService>();
+builder.Services.AddHostedService<DeviceMonitorService>();
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
 var jwtSecret = builder.Configuration["Jwt:Secret"]
@@ -74,9 +75,13 @@ builder.Services.AddOpenApiDocument(config =>
 // ── CORS ──────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(opt =>
     opt.AddPolicy("Frontend", policy =>
-        policy.WithOrigins(builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:5173")
+    {
+        var origins = (builder.Configuration["Cors:AllowedOrigins"] ?? "http://localhost:5173,http://localhost:5174")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        policy.WithOrigins(origins)
               .AllowAnyHeader()
-              .AllowAnyMethod()));
+              .AllowAnyMethod();
+    }));
 
 // MQTT Controllers with Flespi
 builder.Services.AddMqttControllers();
