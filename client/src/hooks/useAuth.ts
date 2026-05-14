@@ -51,6 +51,27 @@ export function useAuth() {
         notifyListeners()
     }, [])
 
+    const register = useCallback(async (email: string, password: string): Promise<void> => {
+        const res = await fetch(`${BASE_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        })
+
+        if (res.status === 409) throw new Error('This email is already registered.')
+        if (!res.ok) throw new Error('Something went wrong. Please try again.')
+
+        const data = await res.json()
+
+        globalState = {
+            isAuthenticated: true,
+            user: { name: data.user.email.split('@')[0], email: data.user.email },
+            token: data.accessToken,
+        }
+        sessionStorage.setItem('gh_auth', JSON.stringify(globalState))
+        notifyListeners()
+    }, [])
+
     const logout = useCallback(() => {
         globalState = { isAuthenticated: false, user: null, token: null }
         sessionStorage.removeItem('gh_auth')
@@ -62,6 +83,7 @@ export function useAuth() {
         user: globalState.user,
         token: globalState.token,
         login,
+        register,
         logout,
     }
 }

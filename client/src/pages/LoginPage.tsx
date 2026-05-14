@@ -1,5 +1,5 @@
 ﻿import { useState, FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import styles from './LoginPage.module.css'
 
@@ -144,6 +144,11 @@ export default function LoginPage() {
                         {loading ? <span className={styles.spinner} aria-label="Signing in…" /> : 'Sign In'}
                     </button>
                 </form>
+
+                <p className={styles.hint}>
+                    No account?{' '}
+                    <Link to="/register" style={{ color: '#22c55e', fontWeight: 600 }}>Create one</Link>
+                </p>
             </div>
         </div>
     )
