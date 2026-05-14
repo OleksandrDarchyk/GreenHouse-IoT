@@ -1,4 +1,4 @@
-﻿import { useState, FormEvent } from 'react'
+import { useState, FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import styles from './LoginPage.module.css'
@@ -6,6 +6,7 @@ import styles from './LoginPage.module.css'
 interface FormErrors {
     email?: string
     password?: string
+    confirm?: string
     general?: string
 }
 
@@ -16,24 +17,32 @@ function validateEmail(email: string): string | undefined {
 
 function validatePassword(password: string): string | undefined {
     if (!password) return 'Password is required'
-    if (password.length < 4) return 'Password must be at least 4 characters'
+    if (password.length < 8) return 'Password must be at least 8 characters'
 }
 
-export default function LoginPage() {
+function validateConfirm(password: string, confirm: string): string | undefined {
+    if (!confirm) return 'Please confirm your password'
+    if (password !== confirm) return 'Passwords do not match'
+}
+
+export default function RegisterPage() {
     const navigate = useNavigate()
-    const { login } = useAuth()
+    const { register } = useAuth()
 
     const [email, setEmail]       = useState('')
     const [password, setPassword] = useState('')
+    const [confirm, setConfirm]   = useState('')
     const [errors, setErrors]     = useState<FormErrors>({})
     const [loading, setLoading]   = useState(false)
-    const [touched, setTouched]   = useState({ email: false, password: false })
+    const [touched, setTouched]   = useState({ email: false, password: false, confirm: false })
 
-    function handleBlur(field: 'email' | 'password') {
+    function handleBlur(field: 'email' | 'password' | 'confirm') {
         setTouched(t => ({ ...t, [field]: true }))
         setErrors(prev => ({
             ...prev,
-            [field]: field === 'email' ? validateEmail(email) : validatePassword(password),
+            email:    field === 'email'    ? validateEmail(email)                   : prev.email,
+            password: field === 'password' ? validatePassword(password)             : prev.password,
+            confirm:  field === 'confirm'  ? validateConfirm(password, confirm)     : prev.confirm,
         }))
     }
 
@@ -41,18 +50,21 @@ export default function LoginPage() {
         e.preventDefault()
         const emailErr    = validateEmail(email)
         const passwordErr = validatePassword(password)
-        if (emailErr || passwordErr) {
-            setErrors({ email: emailErr, password: passwordErr })
-            setTouched({ email: true, password: true })
+        const confirmErr  = validateConfirm(password, confirm)
+
+        if (emailErr || passwordErr || confirmErr) {
+            setErrors({ email: emailErr, password: passwordErr, confirm: confirmErr })
+            setTouched({ email: true, password: true, confirm: true })
             return
         }
+
         setLoading(true)
         setErrors({})
         try {
-            await login(email, password)
+            await register(email, password)
             navigate('/dashboard')
         } catch (err) {
-            setErrors({ general: err instanceof Error ? err.message : 'Login failed' })
+            setErrors({ general: err instanceof Error ? err.message : 'Registration failed' })
         } finally {
             setLoading(false)
         }
@@ -72,8 +84,8 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                <h1 className={styles.heading}>Welcome back</h1>
-                <p className={styles.sub}>Sign in to monitor your greenhouse</p>
+                <h1 className={styles.heading}>Create account</h1>
+                <p className={styles.sub}>Register to access your greenhouse</p>
 
                 {errors.general && (
                     <div className={styles.errorBanner} role="alert">{errors.general}</div>
@@ -104,8 +116,8 @@ export default function LoginPage() {
                         <input
                             id="password"
                             type="password"
-                            autoComplete="current-password"
-                            placeholder="••••••••"
+                            autoComplete="new-password"
+                            placeholder="Min. 8 characters"
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             onBlur={() => handleBlur('password')}
@@ -118,14 +130,33 @@ export default function LoginPage() {
                         )}
                     </div>
 
+                    <div className={styles.field}>
+                        <label htmlFor="confirm" className={styles.label}>Confirm Password</label>
+                        <input
+                            id="confirm"
+                            type="password"
+                            autoComplete="new-password"
+                            placeholder="Repeat your password"
+                            value={confirm}
+                            onChange={e => setConfirm(e.target.value)}
+                            onBlur={() => handleBlur('confirm')}
+                            className={`${styles.input} ${touched.confirm && errors.confirm ? styles.inputError : ''}`}
+                            aria-describedby={errors.confirm ? 'confirm-error' : undefined}
+                            aria-invalid={!!errors.confirm}
+                        />
+                        {touched.confirm && errors.confirm && (
+                            <span id="confirm-error" className={styles.fieldError} role="alert">{errors.confirm}</span>
+                        )}
+                    </div>
+
                     <button type="submit" className={styles.btn} disabled={loading}>
-                        {loading ? <span className={styles.spinner} aria-label="Signing in…" /> : 'Sign In'}
+                        {loading ? <span className={styles.spinner} aria-label="Creating account…" /> : 'Create Account'}
                     </button>
                 </form>
 
                 <p className={styles.hint}>
-                    No account?{' '}
-                    <Link to="/register" style={{ color: '#22c55e', fontWeight: 600 }}>Create one</Link>
+                    Already have an account?{' '}
+                    <Link to="/login" style={{ color: '#22c55e', fontWeight: 600 }}>Sign in</Link>
                 </p>
             </div>
         </div>
