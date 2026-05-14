@@ -305,6 +305,74 @@
     padding: 3px 10px;
 }
 
+/* Device Overview */
+.deviceList {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.deviceRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: box-shadow 0.15s;
+}
+
+.deviceRow:hover {
+    box-shadow: var(--shadow-card);
+}
+
+.deviceName {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.deviceLastSeen {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.deviceStatus {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    border-radius: 20px;
+    padding: 4px 12px;
+}
+
+.deviceDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.deviceOnline {
+    color: #16a34a;
+    background: #dcfce7;
+    border: 1px solid #86efac;
+}
+
+.deviceOnline .deviceDot {
+    animation: pulse 1.5s infinite;
+}
+
+.deviceOffline {
+    color: #6b7280;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+}
+
 @media (max-width: 640px) {
     .grid { grid-template-columns: 1fr; }
     .alertRow { flex-wrap: wrap; gap: 8px; }

@@ -1,54 +1,53 @@
 import DashboardLayout from '../components/layout/DashboardLayout'
+import { useAlerts, type AlertRecord } from '../hooks/useAlerts'
 import styles from './DashboardContent.module.css'
 
-type Severity = 'Critical' | 'Warning' | 'Info'
-
-interface Alert {
-    id: number
-    severity: Severity
-    message: string
-    time: string
-    resolved: boolean
-}
-
-const MOCK_ALERTS: Alert[] = [
-    { id: 1, severity: 'Critical', message: 'Soil moisture below 20% — irrigation required',      time: '14:32', resolved: false },
-    { id: 2, severity: 'Warning',  message: 'Temperature exceeded 35°C — ventilation activated',  time: '13:15', resolved: true  },
-    { id: 3, severity: 'Warning',  message: 'Air quality above 150 PPM',                          time: '11:48', resolved: true  },
-    { id: 4, severity: 'Info',     message: 'Device greenhouse-001 reconnected',                   time: '10:02', resolved: true  },
-]
-
-const SEVERITY_CLASS: Record<Severity, string> = {
+const SEVERITY_CLASS: Record<string, string> = {
     Critical: styles.severityCritical,
     Warning:  styles.severityWarning,
     Info:     styles.severityInfo,
 }
 
+function formatTime(iso: string): string {
+    return new Date(iso).toLocaleTimeString('en-GB', {
+        hour: '2-digit', minute: '2-digit',
+    })
+}
+
+function AlertRow({ a }: { a: AlertRecord }) {
+    return (
+        <div className={`${styles.alertRow} ${a.isResolved ? styles.alertResolved : ''}`}>
+            <span className={`${styles.severityTag} ${SEVERITY_CLASS[a.severity] ?? styles.severityInfo}`}>
+                {a.severity}
+            </span>
+            <span className={styles.alertMsg}>{a.message}</span>
+            <span className={styles.alertTime}>{formatTime(a.createdAt)}</span>
+            <span className={styles.alertStatus}>{a.isResolved ? 'Resolved' : 'Active'}</span>
+        </div>
+    )
+}
+
 export default function AlertsPage() {
-    const active = MOCK_ALERTS.filter(a => !a.resolved)
+    const { alerts, loading, error } = useAlerts()
+    const active = alerts.filter(a => !a.isResolved).length
 
     return (
-        <DashboardLayout alertCount={active.length}>
+        <DashboardLayout alertCount={active}>
             <div className={styles.header}>
                 <h2 className={styles.title}>Alerts</h2>
-                {active.length > 0 && (
-                    <span className={styles.alertBadge}>{active.length} active</span>
+                {active > 0 && (
+                    <span className={styles.alertBadge}>{active} active</span>
                 )}
             </div>
-            {MOCK_ALERTS.length === 0 ? (
-                <p className={styles.placeholder}>No alerts recorded.</p>
-            ) : (
+
+            {loading && <p className={styles.stateMsg}>Loading…</p>}
+            {!loading && error && <p className={styles.stateMsgError}>Error: {error}</p>}
+            {!loading && !error && alerts.length === 0 && (
+                <p className={styles.stateMsg}>No alerts recorded.</p>
+            )}
+            {!loading && !error && alerts.length > 0 && (
                 <div className={styles.list}>
-                    {MOCK_ALERTS.map(a => (
-                        <div key={a.id} className={`${styles.alertRow} ${a.resolved ? styles.alertResolved : ''}`}>
-                            <span className={`${styles.severityTag} ${SEVERITY_CLASS[a.severity]}`}>
-                                {a.severity}
-                            </span>
-                            <span className={styles.alertMsg}>{a.message}</span>
-                            <span className={styles.alertTime}>{a.time}</span>
-                            <span className={styles.alertStatus}>{a.resolved ? 'Resolved' : 'Active'}</span>
-                        </div>
-                    ))}
+                    {alerts.map(a => <AlertRow key={a.id} a={a} />)}
                 </div>
             )}
         </DashboardLayout>
