@@ -1,18 +1,27 @@
-using System.Reflection;
 using System.Text;
+using api.Extensions;
 using api.Services;
 using DataAccess.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Mqtt.Controllers;
+using NSwag;
+using NSwag.Generation.Processors.Security;
+using StateleSSE.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── SSE backplane + EF realtime ───────────────────────────────────────────────
+builder.Services.AddInMemorySseBackplane();
+builder.Services.AddEfRealtime();
+
 // ── Database (Neon.db / PostgreSQL) ──────────────────────────────────────────
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>((sp, opt) =>
+{
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    opt.AddEfRealtimeInterceptor(sp);
+});
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPasswordService, PasswordService>();
@@ -41,40 +50,25 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+    {
+        opt.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        opt.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 
-// ── Swagger ───────────────────────────────────────────────────────────────────
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+// ── NSwag ─────────────────────────────────────────────────────────────────────
+builder.Services.AddOpenApiDocument(config =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    config.Title = "Greenhouse IoT API";
+    config.AddSecurity("Bearer", new OpenApiSecurityScheme
     {
-        Title   = "Greenhouse IoT API",
-        Version = "v1",
-    });
-
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
-
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name         = "Authorization",
-        Type         = SecuritySchemeType.Http,
-        Scheme       = "bearer",
+        Type        = OpenApiSecuritySchemeType.Http,
+        Scheme      = "bearer",
         BearerFormat = "JWT",
-        In           = ParameterLocation.Header,
+        Description = "Enter your JWT token"
     });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            Array.Empty<string>()
-        }
-    });
+    config.OperationProcessors.Add(new AspNetCoreOperationSecurityScopeProcessor("Bearer"));
 });
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
@@ -98,18 +92,31 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Greenhouse IoT API v1");
-        c.RoutePrefix = "swagger";
-    });
+    app.UseOpenApi();
+    app.UseSwaggerUi();
+
+    app.GenerateApiClientsFromOpenApi(
+            "../../client/src/api/generated/generated-ts-client.ts",
+            "./openapi.json")
+        .GetAwaiter()
+        .GetResult();
 }
 
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// ── SSE endpoint ──────────────────────────────────────────────────────────────
+app.MapGet("/sse", async (HttpContext ctx, ISseBackplane backplane, CancellationToken ct) =>
+{
+    await using var connection = backplane.CreateConnection();
+    await using var stream = await ctx.OpenSseStreamAsync(cancellationToken: ct);
+    await stream.WriteAsync(
+        System.Text.Json.JsonSerializer.Serialize(new { connectionId = connection.ConnectionId }), ct);
+    await foreach (var evt in connection.ReadAllAsync(ct))
+        await stream.WriteAsync(evt.Group ?? "message", evt.Data, ct);
+}).RequireCors("Frontend");
 
 // Connect MQTT to Flespi
 var mqttHost = builder.Configuration["Mqtt:Host"] ?? "mqtt.flespi.io";
