@@ -9,7 +9,7 @@
 
 export interface ISensorReadingClient {
 
-    getSensorReadings(deviceId: string | null | undefined, take: number | undefined): Promise<SensorReading[]>;
+    getSensorReadings(deviceId: string | null | undefined, take: number | undefined, from: Date | null | undefined, to: Date | null | undefined): Promise<SensorReading[]>;
 
     getSensorReadingLatest(connectionId: string | undefined, deviceId: string | null | undefined): Promise<RealtimeListenResponseOfSensorReading>;
 
@@ -26,7 +26,7 @@ export class SensorReadingClient implements ISensorReadingClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getSensorReadings(deviceId: string | null | undefined, take: number | undefined): Promise<SensorReading[]> {
+    getSensorReadings(deviceId: string | null | undefined, take: number | undefined, from: Date | null | undefined, to: Date | null | undefined): Promise<SensorReading[]> {
         let url_ = this.baseUrl + "/api/SensorReading/GetSensorReadings?";
         if (deviceId !== undefined && deviceId !== null)
             url_ += "deviceId=" + encodeURIComponent("" + deviceId) + "&";
@@ -34,6 +34,10 @@ export class SensorReadingClient implements ISensorReadingClient {
             throw new globalThis.Error("The parameter 'take' cannot be null.");
         else if (take !== undefined)
             url_ += "take=" + encodeURIComponent("" + take) + "&";
+        if (from !== undefined && from !== null)
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
+        if (to !== undefined && to !== null)
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

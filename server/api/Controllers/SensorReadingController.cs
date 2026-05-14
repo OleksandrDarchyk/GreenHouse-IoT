@@ -20,14 +20,22 @@ public class SensorReadingController(
     [HttpGet(nameof(GetSensorReadings))]
     public async Task<List<SensorReading>> GetSensorReadings(
         string? deviceId,
-        int take = 100)
+        int take = 100,
+        DateTime? from = null,
+        DateTime? to = null)
     {
-        take = Math.Clamp(take, 1, 200);
+        take = Math.Clamp(take, 1, 2000);
 
         var q = db.SensorReadings.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(deviceId))
             q = q.Where(s => s.DeviceId == deviceId);
+
+        if (from.HasValue)
+            q = q.Where(s => s.Timestamp >= from.Value);
+
+        if (to.HasValue)
+            q = q.Where(s => s.Timestamp <= to.Value);
 
         var latest = await q
             .OrderByDescending(s => s.Timestamp)
