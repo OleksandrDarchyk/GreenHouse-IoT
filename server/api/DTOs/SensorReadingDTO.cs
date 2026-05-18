@@ -2,7 +2,7 @@ namespace api.DTOs;
 
 public class SensorReadingDTO
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public string DeviceId { get; set; } = "";
 
