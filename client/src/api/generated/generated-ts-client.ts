@@ -133,7 +133,7 @@ export class AuthClient implements IAuthClient {
 
 export interface IAlertClient {
 
-    getAlerts(take: number | undefined): Promise<AlertDto[]>;
+    getAlerts(take: number | undefined): Promise<AlertDtoResponse[]>;
 }
 
 export class AlertClient implements IAlertClient {
@@ -146,7 +146,7 @@ export class AlertClient implements IAlertClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getAlerts(take: number | undefined): Promise<AlertDto[]> {
+    getAlerts(take: number | undefined): Promise<AlertDtoResponse[]> {
         let url_ = this.baseUrl + "/api/Alert?";
         if (take === null)
             throw new globalThis.Error("The parameter 'take' cannot be null.");
@@ -166,7 +166,7 @@ export class AlertClient implements IAlertClient {
         });
     }
 
-    protected processGetAlerts(response: Response): Promise<AlertDto[]> {
+    protected processGetAlerts(response: Response): Promise<AlertDtoResponse[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -176,7 +176,7 @@ export class AlertClient implements IAlertClient {
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
-                    result200!.push(AlertDto.fromJS(item));
+                    result200!.push(AlertDtoResponse.fromJS(item));
             }
             else {
                 result200 = null as any;
@@ -188,7 +188,65 @@ export class AlertClient implements IAlertClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<AlertDto[]>(null as any);
+        return Promise.resolve<AlertDtoResponse[]>(null as any);
+    }
+}
+
+export interface ICommandClient {
+
+    sendCommand(dto: CommandDtoRequest): Promise<FileResponse>;
+}
+
+export class CommandClient implements ICommandClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    sendCommand(dto: CommandDtoRequest): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/Command";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSendCommand(_response);
+        });
+    }
+
+    protected processSendCommand(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
     }
 }
 
@@ -288,9 +346,9 @@ export class DeviceClient implements IDeviceClient {
 
 export interface ISensorReadingClient {
 
-    getSensorReadings(deviceId: string | null | undefined, take: number | undefined, from: Date | null | undefined, to: Date | null | undefined): Promise<SensorReading[]>;
+    getSensorReadings(deviceId: string | null | undefined, take: number | undefined, from: Date | null | undefined, to: Date | null | undefined): Promise<SensorReadingDtoResponse[]>;
 
-    getSensorReadingLatest(connectionId: string | undefined, deviceId: string | null | undefined): Promise<RealtimeListenResponseOfSensorReading>;
+    getSensorReadingLatest(connectionId: string | undefined, deviceId: string | null | undefined): Promise<RealtimeListenResponseOfSensorReadingDtoResponse>;
 
     connect(): Promise<void>;
 }
@@ -305,7 +363,7 @@ export class SensorReadingClient implements ISensorReadingClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getSensorReadings(deviceId: string | null | undefined, take: number | undefined, from: Date | null | undefined, to: Date | null | undefined): Promise<SensorReading[]> {
+    getSensorReadings(deviceId: string | null | undefined, take: number | undefined, from: Date | null | undefined, to: Date | null | undefined): Promise<SensorReadingDtoResponse[]> {
         let url_ = this.baseUrl + "/api/SensorReading/GetSensorReadings?";
         if (deviceId !== undefined && deviceId !== null)
             url_ += "deviceId=" + encodeURIComponent("" + deviceId) + "&";
@@ -331,7 +389,7 @@ export class SensorReadingClient implements ISensorReadingClient {
         });
     }
 
-    protected processGetSensorReadings(response: Response): Promise<SensorReading[]> {
+    protected processGetSensorReadings(response: Response): Promise<SensorReadingDtoResponse[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -341,7 +399,7 @@ export class SensorReadingClient implements ISensorReadingClient {
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
-                    result200!.push(SensorReading.fromJS(item));
+                    result200!.push(SensorReadingDtoResponse.fromJS(item));
             }
             else {
                 result200 = null as any;
@@ -353,10 +411,10 @@ export class SensorReadingClient implements ISensorReadingClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<SensorReading[]>(null as any);
+        return Promise.resolve<SensorReadingDtoResponse[]>(null as any);
     }
 
-    getSensorReadingLatest(connectionId: string | undefined, deviceId: string | null | undefined): Promise<RealtimeListenResponseOfSensorReading> {
+    getSensorReadingLatest(connectionId: string | undefined, deviceId: string | null | undefined): Promise<RealtimeListenResponseOfSensorReadingDtoResponse> {
         let url_ = this.baseUrl + "/api/SensorReading/GetSensorReadingLatest?";
         if (connectionId === null)
             throw new globalThis.Error("The parameter 'connectionId' cannot be null.");
@@ -378,14 +436,14 @@ export class SensorReadingClient implements ISensorReadingClient {
         });
     }
 
-    protected processGetSensorReadingLatest(response: Response): Promise<RealtimeListenResponseOfSensorReading> {
+    protected processGetSensorReadingLatest(response: Response): Promise<RealtimeListenResponseOfSensorReadingDtoResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = RealtimeListenResponseOfSensorReading.fromJS(resultData200);
+            result200 = RealtimeListenResponseOfSensorReadingDtoResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -393,7 +451,7 @@ export class SensorReadingClient implements ISensorReadingClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<RealtimeListenResponseOfSensorReading>(null as any);
+        return Promise.resolve<RealtimeListenResponseOfSensorReadingDtoResponse>(null as any);
     }
 
     connect(): Promise<void> {
@@ -667,7 +725,7 @@ export interface ILoginRequest {
     password?: string;
 }
 
-export class AlertDto implements IAlertDto {
+export class AlertDtoResponse implements IAlertDtoResponse {
     id?: string;
     deviceId?: string;
     severity?: string;
@@ -676,7 +734,7 @@ export class AlertDto implements IAlertDto {
     createdAt?: Date;
     resolvedAt?: Date | undefined;
 
-    constructor(data?: IAlertDto) {
+    constructor(data?: IAlertDtoResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -697,9 +755,9 @@ export class AlertDto implements IAlertDto {
         }
     }
 
-    static fromJS(data: any): AlertDto {
+    static fromJS(data: any): AlertDtoResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new AlertDto();
+        let result = new AlertDtoResponse();
         result.init(data);
         return result;
     }
@@ -717,7 +775,7 @@ export class AlertDto implements IAlertDto {
     }
 }
 
-export interface IAlertDto {
+export interface IAlertDtoResponse {
     id?: string;
     deviceId?: string;
     severity?: string;
@@ -727,7 +785,51 @@ export interface IAlertDto {
     resolvedAt?: Date | undefined;
 }
 
-export class SensorReading implements ISensorReading {
+export class CommandDtoRequest implements ICommandDtoRequest {
+    deviceId?: string;
+    action?: string;
+    payload?: string;
+
+    constructor(data?: ICommandDtoRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.deviceId = _data["deviceId"];
+            this.action = _data["action"];
+            this.payload = _data["payload"];
+        }
+    }
+
+    static fromJS(data: any): CommandDtoRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new CommandDtoRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["deviceId"] = this.deviceId;
+        data["action"] = this.action;
+        data["payload"] = this.payload;
+        return data;
+    }
+}
+
+export interface ICommandDtoRequest {
+    deviceId?: string;
+    action?: string;
+    payload?: string;
+}
+
+export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {
     id?: string;
     deviceId?: string;
     temperature?: number;
@@ -737,7 +839,7 @@ export class SensorReading implements ISensorReading {
     lightLevel?: number;
     timestamp?: Date;
 
-    constructor(data?: ISensorReading) {
+    constructor(data?: ISensorReadingDtoResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -759,9 +861,9 @@ export class SensorReading implements ISensorReading {
         }
     }
 
-    static fromJS(data: any): SensorReading {
+    static fromJS(data: any): SensorReadingDtoResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new SensorReading();
+        let result = new SensorReadingDtoResponse();
         result.init(data);
         return result;
     }
@@ -780,7 +882,7 @@ export class SensorReading implements ISensorReading {
     }
 }
 
-export interface ISensorReading {
+export interface ISensorReadingDtoResponse {
     id?: string;
     deviceId?: string;
     temperature?: number;
@@ -830,23 +932,23 @@ export interface IRealtimeListenResponse {
 }
 
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
-export class RealtimeListenResponseOfSensorReading extends RealtimeListenResponse implements IRealtimeListenResponseOfSensorReading {
-    data?: SensorReading;
+export class RealtimeListenResponseOfSensorReadingDtoResponse extends RealtimeListenResponse implements IRealtimeListenResponseOfSensorReadingDtoResponse {
+    data?: SensorReadingDtoResponse;
 
-    constructor(data?: IRealtimeListenResponseOfSensorReading) {
+    constructor(data?: IRealtimeListenResponseOfSensorReadingDtoResponse) {
         super(data);
     }
 
     override init(_data?: any) {
         super.init(_data);
         if (_data) {
-            this.data = _data["data"] ? SensorReading.fromJS(_data["data"]) : undefined as any;
+            this.data = _data["data"] ? SensorReadingDtoResponse.fromJS(_data["data"]) : undefined as any;
         }
     }
 
-    static override fromJS(data: any): RealtimeListenResponseOfSensorReading {
+    static override fromJS(data: any): RealtimeListenResponseOfSensorReadingDtoResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new RealtimeListenResponseOfSensorReading();
+        let result = new RealtimeListenResponseOfSensorReadingDtoResponse();
         result.init(data);
         return result;
     }
@@ -860,8 +962,8 @@ export class RealtimeListenResponseOfSensorReading extends RealtimeListenRespons
 }
 
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
-export interface IRealtimeListenResponseOfSensorReading extends IRealtimeListenResponse {
-    data?: SensorReading;
+export interface IRealtimeListenResponseOfSensorReadingDtoResponse extends IRealtimeListenResponse {
+    data?: SensorReadingDtoResponse;
 }
 
 export interface FileResponse {

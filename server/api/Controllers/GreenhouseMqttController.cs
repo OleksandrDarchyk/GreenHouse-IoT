@@ -1,5 +1,6 @@
 using System.Text.Json;
 using api.DTOs;
+using api.DTOs.Response;
 using DataAccess.Data;
 using DataAccess.Models;
 using Mqtt.Controllers;
@@ -12,7 +13,7 @@ public class GreenhouseMqttController(
 ) : MqttController
 {
     [MqttRoute("greenhouse/smart-greenhouse/{deviceId}/sensor-data")]
-    public async Task ListenSensorData(SensorReadingDTO msg, string deviceId)
+    public async Task ListenSensorData(SensorReadingDtoResponse msg, string deviceId)
     {
         logger.LogInformation("MQTT telemetry: {Json}", JsonSerializer.Serialize(msg));
 

@@ -1,4 +1,6 @@
-﻿using api.Services;
+﻿using api.DTOs.Request;
+using api.DTOs.Response;
+using api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -9,13 +11,13 @@ namespace Api.Controllers;
 [Produces("application/json")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService   _auth;
-    private readonly ITokenService  _tokens;
+    private readonly IAuthService _auth;
+    private readonly ITokenService _tokens;
     private readonly IConfiguration _config;
 
     public AuthController(IAuthService auth, ITokenService tokens, IConfiguration config)
     {
-        _auth   = auth;
+        _auth = auth;
         _tokens = tokens;
         _config = config;
     }
@@ -30,8 +32,8 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var user      = await _auth.RegisterAsync(req.Email, req.Password);
-            var token     = _tokens.GenerateToken(user);
+            var user = await _auth.RegisterAsync(req.Email, req.Password);
+            var token = _tokens.GenerateToken(user);
             var expiresIn = int.Parse(_config["Jwt:ExpiresInMinutes"] ?? "60") * 60;
 
             return CreatedAtAction(nameof(Register), BuildResponse(token, expiresIn, user));
@@ -55,12 +57,27 @@ public class AuthController : ControllerBase
         if (user is null)
             return Unauthorized(new { message = "Invalid email or password." });
 
-        var token     = _tokens.GenerateToken(user);
+        var token = _tokens.GenerateToken(user);
         var expiresIn = int.Parse(_config["Jwt:ExpiresInMinutes"] ?? "60") * 60;
 
         return Ok(BuildResponse(token, expiresIn, user));
     }
 
-    private static AuthResponse BuildResponse(string token, int expiresIn, DataAccess.Models.User user) =>
-        new(token, "Bearer", expiresIn, new UserDto(user.Id, user.Email, user.Role, user.CreatedAt));
+    private static AuthResponse BuildResponse(
+        string token,
+        int expiresIn,
+        DataAccess.Models.User user)
+    {
+        return new AuthResponse(
+            token,
+            "Bearer",
+            expiresIn,
+            new UserDto(
+                user.Id,
+                user.Email,
+                user.Role,
+                user.CreatedAt
+            )
+        );
+    }
 }
