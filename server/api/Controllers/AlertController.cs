@@ -1,4 +1,5 @@
 using api.DTOs;
+using api.DTOs.Response;
 using DataAccess.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ public class AlertController(AppDbContext db) : ControllerBase
 {
     // GET /api/Alert?take=50
     [HttpGet]
-    public async Task<List<AlertDto>> GetAlerts(int take = 50)
+    public async Task<List<AlertDtoResponse>> GetAlerts(int take = 50)
     {
         take = Math.Clamp(take, 1, 200);
 
@@ -19,7 +20,7 @@ public class AlertController(AppDbContext db) : ControllerBase
             .AsNoTracking()
             .OrderByDescending(a => a.CreatedAt)
             .Take(take)
-            .Select(a => new AlertDto
+            .Select(a => new AlertDtoResponse
             {
                 Id         = a.Id,
                 DeviceId   = a.DeviceId,

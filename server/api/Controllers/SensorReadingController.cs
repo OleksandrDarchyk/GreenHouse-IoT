@@ -1,3 +1,4 @@
+using api.DTOs.Response;
 using DataAccess.Data;
 using DataAccess.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,7 @@ public class SensorReadingController(
     // Initial sensor data snapshot for chart/list
     // GET /api/SensorReading/GetSensorReadings
     [HttpGet(nameof(GetSensorReadings))]
-    public async Task<List<SensorReading>> GetSensorReadings(
+    public async Task<List<SensorReadingDtoResponse>> GetSensorReadings(
         string? deviceId,
         int take = 100,
         DateTime? from = null,
@@ -40,6 +41,17 @@ public class SensorReadingController(
         var latest = await q
             .OrderByDescending(s => s.Timestamp)
             .Take(take)
+            .Select(s => new SensorReadingDtoResponse
+            {
+                Id = s.Id,
+                DeviceId = s.DeviceId,
+                Temperature = s.Temperature,
+                Humidity = s.Humidity,
+                SoilMoisture = s.SoilMoisture,
+                AirQuality = s.AirQuality,
+                LightLevel = s.LightLevel,
+                Timestamp = s.Timestamp
+            })
             .ToListAsync();
 
         return latest
@@ -50,7 +62,7 @@ public class SensorReadingController(
     // Live latest sensor reading for SSE
     // GET /api/SensorReading/GetSensorReadingLatest
     [HttpGet(nameof(GetSensorReadingLatest))]
-    public async Task<RealtimeListenResponse<SensorReading?>> GetSensorReadingLatest(
+    public async Task<RealtimeListenResponse<SensorReadingDtoResponse?>> GetSensorReadingLatest(
         string connectionId,
         string? deviceId)
     {
@@ -71,6 +83,17 @@ public class SensorReadingController(
 
                 return await q
                     .OrderByDescending(s => s.Timestamp)
+                    .Select(s => new SensorReadingDtoResponse
+                    {
+                        Id = s.Id,
+                        DeviceId = s.DeviceId,
+                        Temperature = s.Temperature,
+                        Humidity = s.Humidity,
+                        SoilMoisture = s.SoilMoisture,
+                        AirQuality = s.AirQuality,
+                        LightLevel = s.LightLevel,
+                        Timestamp = s.Timestamp
+                    })
                     .FirstOrDefaultAsync();
             });
 
@@ -81,8 +104,19 @@ public class SensorReadingController(
 
         var initial = await initialQ
             .OrderByDescending(s => s.Timestamp)
+            .Select(s => new SensorReadingDtoResponse
+            {
+                Id = s.Id,
+                DeviceId = s.DeviceId,
+                Temperature = s.Temperature,
+                Humidity = s.Humidity,
+                SoilMoisture = s.SoilMoisture,
+                AirQuality = s.AirQuality,
+                LightLevel = s.LightLevel,
+                Timestamp = s.Timestamp
+            })
             .FirstOrDefaultAsync();
 
-        return new RealtimeListenResponse<SensorReading?>(group, initial);
+        return new RealtimeListenResponse<SensorReadingDtoResponse?>(group, initial);
     }
 }

@@ -1,6 +1,6 @@
-namespace api.DTOs;
+namespace api.DTOs.Response;
 
-public class AlertDto
+public class AlertDtoResponse
 {
     public Guid      Id         { get; set; }
     public string    DeviceId   { get; set; } = "";

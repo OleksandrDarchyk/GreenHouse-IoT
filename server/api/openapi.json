@@ -118,13 +118,51 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/AlertDto"
+                    "$ref": "#/components/schemas/AlertDtoResponse"
                   }
                 }
               }
             }
           }
         }
+      }
+    },
+    "/api/Command": {
+      "post": {
+        "tags": [
+          "Command"
+        ],
+        "operationId": "Command_SendCommand",
+        "requestBody": {
+          "x-name": "dto",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommandDtoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/Device/status": {
@@ -224,7 +262,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/SensorReading"
+                    "$ref": "#/components/schemas/SensorReadingDtoResponse"
                   }
                 }
               }
@@ -264,7 +302,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RealtimeListenResponseOfSensorReading"
+                  "$ref": "#/components/schemas/RealtimeListenResponseOfSensorReadingDtoResponse"
                 }
               }
             }
@@ -380,7 +418,7 @@
           }
         }
       },
-      "AlertDto": {
+      "AlertDtoResponse": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -411,7 +449,22 @@
           }
         }
       },
-      "SensorReading": {
+      "CommandDtoRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "string"
+          }
+        }
+      },
+      "SensorReadingDtoResponse": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -448,7 +501,7 @@
           }
         }
       },
-      "RealtimeListenResponseOfSensorReading": {
+      "RealtimeListenResponseOfSensorReadingDtoResponse": {
         "allOf": [
           {
             "$ref": "#/components/schemas/RealtimeListenResponse"
@@ -459,7 +512,7 @@
             "additionalProperties": false,
             "properties": {
               "data": {
-                "$ref": "#/components/schemas/SensorReading"
+                "$ref": "#/components/schemas/SensorReadingDtoResponse"
               }
             }
           }

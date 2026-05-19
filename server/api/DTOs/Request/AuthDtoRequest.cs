@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Api.Controllers;
+namespace api.DTOs.Request;
 
 public record RegisterRequest(
     [Required, EmailAddress, MaxLength(256)] string Email,
@@ -12,16 +12,3 @@ public record LoginRequest(
     [Required]               string Password
 );
 
-public record AuthResponse(
-    string  AccessToken,
-    string  TokenType,
-    int     ExpiresIn,
-    UserDto User
-);
-
-public record UserDto(
-    int      Id,
-    string   Email,
-    string   Role,
-    DateTime CreatedAt
-);

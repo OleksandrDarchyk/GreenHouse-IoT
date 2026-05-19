@@ -1,5 +1,3 @@
-using DataAccess.Models;
-
 namespace DataAccess.Models;
 
 public class Command
@@ -18,6 +16,10 @@ public class Command
     
         public string Status { get; set; } = "Pending";
         // Pending, Sent, Completed, Failed
+        // Pending   = saved in database, not sent yet
+        // Sent      = successfully published to Flespi/MQTT
+        // Completed = ESP32 confirmed it executed the command
+        // Failed    = backend failed to publish, or device reported failure
     
         public User User { get; set; } = null!;
 }
