@@ -28,6 +28,7 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ITokenService,    TokenService>();
 builder.Services.AddScoped<IAuthService,     AuthService>();
 builder.Services.AddHostedService<DeviceMonitorService>();
+builder.Services.AddScoped<CommandService>();
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
 var jwtSecret = builder.Configuration["Jwt:Secret"]
