@@ -1,23 +1,22 @@
 using DataAccess.Models;
 
-namespace api.DTOs;
+namespace api.DTOs.Response;
 
-public class CommandDto
+public class CommandDtoResponse
 {
     public Guid Id { get; set; }
-    
+
     public string DeviceId { get; set; } = null!;
-    
+
     public int UserId { get; set; }
-    
-    public DateTime Timestamp { get; set; } 
-    
+
+    public string? UserEmail { get; set; }
+
+    public DateTime Timestamp { get; set; }
+
     public string Action { get; set; } = null!;
-    
+
     public string Payload { get; set; } = "{}";
-    
+
     public string Status { get; set; } = "Pending";
-    // Pending, Sent, Completed, Failed
-    
-    public User User { get; set; } = null!;
 }

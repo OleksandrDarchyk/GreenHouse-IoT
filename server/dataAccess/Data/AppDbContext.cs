@@ -10,7 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<SensorReading> SensorReadings => Set<SensorReading>();
     public DbSet<Alert> Alerts => Set<Alert>();
-    DbSet<Command> Commands => Set<Command>();
+    public DbSet<Command> Commands => Set<Command>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
