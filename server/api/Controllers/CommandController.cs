@@ -41,6 +41,9 @@ public class CommandController : ControllerBase
 
         var result = await _commandService.CreateAndSendCommand(dto, userId);
 
+        if (result.Status == "Failed")
+            return StatusCode(502, new { error = "Command saved but MQTT publish failed", command = result });
+
         return Ok(result);
     }
 }
