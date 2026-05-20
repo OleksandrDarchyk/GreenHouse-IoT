@@ -1,4 +1,3 @@
-using System.Text.Json;
 using api.DTOs.Request;
 using api.DTOs.Response;
 using DataAccess.Data;
@@ -24,14 +23,18 @@ public class CommandService
 
     public async Task<CommandDtoResponse> CreateAndSendCommand(CommandDtoRequest commandRequest, int userId)
     {
+        // Payload for MQTT — plain string ("on"/"off") as expected by ESP32
+        var mqttPayload = commandRequest.Payload;
+
         // Create command entity for database.
+        // Payload column is jsonb, so wrap the plain string in JSON quotes
         var command = new Command
         {
             DeviceId = commandRequest.DeviceId,
             UserId = userId,
             Timestamp = DateTime.UtcNow,
             Action = commandRequest.Action,
-            Payload = commandRequest.Payload,
+            Payload = $"\"{commandRequest.Payload}\"",
             Status = "Pending"
         };
         
@@ -39,17 +42,9 @@ public class CommandService
         _db.Commands.Add(command);
         await _db.SaveChangesAsync();
         
-        // Build Mqtt topic
-        var topic = $"greenhouse/smart-greenhouse/{command.DeviceId}/command";
+        // Build Mqtt topic — matches ESP32 subscription pattern
+        var topic = $"greenhouse/smart-greenhouse/{command.DeviceId}/commands/{command.Action}";
 
-        // Build mqtt payload
-        var mqttPayload = JsonSerializer.Serialize(new
-        {
-            commandId = command.Id,
-            action = command.Action,
-            payload = command.Payload,
-            timestamp = command.Timestamp
-        });
 
         try
         {

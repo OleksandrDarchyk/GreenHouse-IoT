@@ -1,8 +1,9 @@
 import { BASE_URL } from '../config/api'
-import { SensorReadingClient, AuthClient } from './generated/generated-ts-client'
+import { SensorReadingClient, AuthClient, CommandClient } from './generated/generated-ts-client'
 
 const customFetch = (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-    const token = localStorage.getItem('token')
+    const stored = sessionStorage.getItem('gh_auth')
+    const token = stored ? JSON.parse(stored).token : null
     return fetch(url, {
         ...init,
         headers: {
@@ -17,4 +18,5 @@ const http = { fetch: customFetch }
 export const api = {
     sensorReading: new SensorReadingClient(BASE_URL, http),
     auth:          new AuthClient(BASE_URL, http),
+    command:       new CommandClient(BASE_URL, http),
 }
