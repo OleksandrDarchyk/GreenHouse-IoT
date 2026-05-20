@@ -23,18 +23,22 @@ public class CommandService
 
     public async Task<CommandDtoResponse> CreateAndSendCommand(CommandDtoRequest commandRequest, int userId)
     {
-        // Payload for MQTT — plain string ("on"/"off") as expected by ESP32
+        // MQTT gets the raw payload exactly as ESP32 expects ("on"/"off" or JSON object)
         var mqttPayload = commandRequest.Payload;
 
-        // Create command entity for database.
-        // Payload column is jsonb, so wrap the plain string in JSON quotes
+        // DB column is jsonb: JSON objects store as-is, plain strings get wrapped in quotes
+        var trimmed = commandRequest.Payload.TrimStart();
+        var dbPayload = trimmed.Length > 0 && (trimmed[0] == '{' || trimmed[0] == '[')
+            ? commandRequest.Payload
+            : $"\"{commandRequest.Payload}\"";
+
         var command = new Command
         {
             DeviceId = commandRequest.DeviceId,
             UserId = userId,
             Timestamp = DateTime.UtcNow,
             Action = commandRequest.Action,
-            Payload = $"\"{commandRequest.Payload}\"",
+            Payload = dbPayload,
             Status = "Pending"
         };
         
