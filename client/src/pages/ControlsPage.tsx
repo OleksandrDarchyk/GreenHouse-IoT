@@ -1,21 +1,39 @@
 import { useState } from 'react'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import styles from './DashboardContent.module.css'
+import { api } from '../api/api'
+import { CommandDtoRequest } from '../api/generated/generated-ts-client'
 
-interface Control { id: string; label: string; description: string }
+interface Control { id: string; label: string; description: string; action: string }
+
+const DEVICE_ID = 'esp32-01'
 
 const CONTROLS: Control[] = [
-    { id: 'irrigation',  label: 'Irrigation',   description: 'Water pump for plant irrigation' },
-    { id: 'ventilation', label: 'Ventilation',  description: 'Fans for air circulation' },
-    { id: 'lighting',    label: 'Lighting',     description: 'Artificial grow lights' },
-    { id: 'heating',     label: 'Heating',      description: 'Heating system for temperature control' },
+    { id: 'irrigation',  label: 'Irrigation',   description: 'Water pump for plant irrigation',        action: 'pump' },
+    { id: 'ventilation', label: 'Ventilation',  description: 'Fans for air circulation',               action: 'fan'  },
+    { id: 'lighting',    label: 'Lighting',     description: 'Artificial grow lights',                 action: 'light' },
+    { id: 'heating',     label: 'Heating',      description: 'Heating system for temperature control', action: 'heater' },
 ]
 
 export default function ControlsPage() {
     const [active, setActive] = useState<Record<string, boolean>>({})
 
-    function toggle(id: string) {
-        setActive(prev => ({ ...prev, [id]: !prev[id] }))
+    async function toggle(control: Control) {
+        const newState = !active[control.id]
+        setActive(prev => ({ ...prev, [control.id]: newState }))
+
+        const dto = new CommandDtoRequest()
+        dto.deviceId = DEVICE_ID
+        dto.action   = control.action
+        dto.payload  = newState ? 'on' : 'off'
+
+        try {
+            await api.command.sendCommand(dto)
+        } catch (err) {
+            console.error('Failed to send command', err)
+            // revert UI if request failed
+            setActive(prev => ({ ...prev, [control.id]: !newState }))
+        }
     }
 
     return (
@@ -34,7 +52,7 @@ export default function ControlsPage() {
                             </div>
                             <button
                                 className={`${styles.toggle} ${active[c.id] ? styles.toggleOn : ''}`}
-                                onClick={() => toggle(c.id)}
+                                onClick={() => toggle(c)}
                                 aria-label={`Toggle ${c.label}`}
                             >
                                 {active[c.id] ? 'ON' : 'OFF'}
