@@ -195,6 +195,8 @@ export class AlertClient implements IAlertClient {
 export interface ICommandClient {
 
     sendCommand(dto: CommandDtoRequest): Promise<FileResponse>;
+
+    sendPumpCommand(deviceId: string, dto: PumpCommandDtoRequest): Promise<FileResponse>;
 }
 
 export class CommandClient implements ICommandClient {
@@ -228,6 +230,51 @@ export class CommandClient implements ICommandClient {
     }
 
     protected processSendCommand(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
+    }
+
+    sendPumpCommand(deviceId: string, dto: PumpCommandDtoRequest): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/devices/{deviceId}/commands/pump";
+        if (deviceId === undefined || deviceId === null)
+            throw new globalThis.Error("The parameter 'deviceId' must be defined.");
+        url_ = url_.replace("{deviceId}", encodeURIComponent("" + deviceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSendPumpCommand(_response);
+        });
+    }
+
+    protected processSendPumpCommand(response: Response): Promise<FileResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200 || status === 206) {
@@ -827,6 +874,42 @@ export interface ICommandDtoRequest {
     deviceId?: string;
     action?: string;
     payload?: string;
+}
+
+export class PumpCommandDtoRequest implements IPumpCommandDtoRequest {
+    state!: string;
+
+    constructor(data?: IPumpCommandDtoRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.state = _data["state"];
+        }
+    }
+
+    static fromJS(data: any): PumpCommandDtoRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new PumpCommandDtoRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["state"] = this.state;
+        return data;
+    }
+}
+
+export interface IPumpCommandDtoRequest {
+    state: string;
 }
 
 export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {

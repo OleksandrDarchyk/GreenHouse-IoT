@@ -46,4 +46,55 @@ public class CommandController : ControllerBase
 
         return Ok(result);
     }
+
+    // POST /api/devices/{deviceId}/commands/pump
+    // Send pump on/off command to ESP32 via MQTT
+    [HttpPost("~/api/devices/{deviceId}/commands/pump")]
+    public async Task<IActionResult> SendPumpCommand(string deviceId, [FromBody] PumpCommandDtoRequest dto)
+    {
+        if (dto is null)
+            return BadRequest(new { error = "Request body is required" });
+
+        if (string.IsNullOrWhiteSpace(deviceId))
+            return BadRequest(new { error = "Device ID is required" });
+
+        if (string.IsNullOrWhiteSpace(dto.State))
+            return BadRequest(new { error = "State is required" });
+
+        var state = dto.State.Trim().ToLowerInvariant();
+        if (state != "on" && state != "off")
+            return BadRequest(new { error = "State must be \"on\" or \"off\"" });
+
+        var userIdRaw =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+            User.FindFirst("sub")?.Value;
+
+        if (!int.TryParse(userIdRaw, out var userId))
+            return Unauthorized(new { error = "Invalid user token" });
+
+        var commandRequest = new CommandDtoRequest
+        {
+            DeviceId = deviceId,
+            Action   = "pump",
+            Payload  = $"{{\"state\":\"{state}\"}}"
+        };
+
+        var result = await _commandService.CreateAndSendCommand(commandRequest, userId);
+
+        if (result.Status == "Failed")
+            return StatusCode(502, new
+            {
+                error   = "Command saved but MQTT publish failed",
+                command = result
+            });
+
+        return Ok(new
+        {
+            deviceId  = result.DeviceId,
+            action    = result.Action,
+            state     = state,
+            mqttTopic = $"greenhouse/smart-greenhouse/{result.DeviceId}/commands/pump",
+            status    = result.Status
+        });
+    }
 }
