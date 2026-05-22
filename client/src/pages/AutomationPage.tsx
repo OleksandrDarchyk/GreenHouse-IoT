@@ -4,53 +4,66 @@ import styles from './DashboardContent.module.css'
 import { api } from '../api/api'
 import { CommandDtoRequest } from '../api/generated/generated-ts-client'
 
-interface Rule {
-    id: string
-    label: string
-    unit: string
-    description: string
-    defaultMin: number
-    defaultMax: number
-    min: number
-    max: number
-    /** deviceId + action to send when "Apply" is clicked; undefined = no automation command */
-    automation?: { deviceId: string; action: string }
+interface AutomationRule {
+    id:               string
+    label:            string
+    sensor:           string
+    unit:             string
+    triggerWord:      string
+    defaultThreshold: number
+    min:              number
+    max:              number
+    deviceId:         string
+    action:           string
 }
 
-const RULES: Rule[] = [
-    { id: 'temp',     label: 'Temperature',  unit: '°C',  description: 'Trigger ventilation outside this range', defaultMin: 18, defaultMax: 35, min: 0,  max: 60,  automation: { deviceId: 'esp32-01', action: 'fan' } },
-    { id: 'humidity', label: 'Humidity',     unit: '%',   description: 'Trigger dehumidifier outside this range', defaultMin: 40, defaultMax: 80, min: 0,  max: 100 },
-    { id: 'soil',     label: 'Soil Moisture',unit: '%',   description: 'Trigger irrigation below minimum',        defaultMin: 30, defaultMax: 80, min: 0,  max: 100 },
-    { id: 'air',      label: 'Air Quality',  unit: 'PPM', description: 'Trigger ventilation above maximum',       defaultMin: 0,  defaultMax: 150, min: 0, max: 500 },
+const RULES: AutomationRule[] = [
+    {
+        id:               'fan',
+        label:            'Fan',
+        sensor:           'temperature',
+        unit:             '°C',
+        triggerWord:      'exceeds',
+        defaultThreshold: 27,
+        min:              0,
+        max:              60,
+        deviceId:         'esp32-01',
+        action:           'fan',
+    },
+    {
+        id:               'pump',
+        label:            'Pump',
+        sensor:           'soil moisture',
+        unit:             '%',
+        triggerWord:      'drops below',
+        defaultThreshold: 30,
+        min:              0,
+        max:              100,
+        deviceId:         'esp32-01',
+        action:           'pump',
+    },
 ]
 
 type ApplyStatus = 'idle' | 'sending' | 'applied' | 'error'
 
 export default function AutomationPage() {
-    const [values, setValues] = useState<Record<string, { min: number; max: number }>>(
-        Object.fromEntries(RULES.map(r => [r.id, { min: r.defaultMin, max: r.defaultMax }]))
+    const [thresholds, setThresholds] = useState<Record<string, number>>(
+        Object.fromEntries(RULES.map(r => [r.id, r.defaultThreshold]))
     )
     const [status, setStatus] = useState<Record<string, ApplyStatus>>({})
 
-    function update(id: string, field: 'min' | 'max', value: number) {
-        setValues(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
-        setStatus(prev => ({ ...prev, [id]: 'idle' }))
-    }
-
-    async function applyAutomation(rule: Rule) {
-        if (!rule.automation) return
+    async function apply(rule: AutomationRule) {
         setStatus(prev => ({ ...prev, [rule.id]: 'sending' }))
 
         const dto = new CommandDtoRequest()
-        dto.deviceId = rule.automation.deviceId
-        dto.action   = rule.automation.action
-        dto.payload  = JSON.stringify({ mode: 'auto', threshold: values[rule.id].max })
+        dto.deviceId = rule.deviceId
+        dto.action   = rule.action
+        dto.payload  = JSON.stringify({ mode: 'auto', threshold: thresholds[rule.id] })
 
         try {
             await api.command.sendCommand(dto)
             setStatus(prev => ({ ...prev, [rule.id]: 'applied' }))
-        } catch (err) {
-            console.error('Failed to apply automation', err)
+        } catch {
             setStatus(prev => ({ ...prev, [rule.id]: 'error' }))
         }
     }
@@ -58,67 +71,64 @@ export default function AutomationPage() {
     return (
         <DashboardLayout>
             <div className={styles.header}>
-                <h2 className={styles.title}>Automation Settings</h2>
-                <span className={styles.subtitle}>Configure thresholds for automatic actions</span>
+                <h2 className={styles.title}>Automation</h2>
+                <span className={styles.subtitle}>Set trigger thresholds for automatic control</span>
             </div>
+
             <div className={styles.list}>
-                {RULES.map(r => (
-                    <div key={r.id} className={styles.card}>
-                        <div className={styles.ruleHeader}>
-                            <h3 className={styles.cardTitle}>{r.label}</h3>
-                            <span className={styles.tag}>{r.unit}</span>
-                        </div>
-                        <p className={styles.placeholder}>{r.description}</p>
-                        <div className={styles.thresholds}>
-                            <label className={styles.thresholdLabel}>
-                                Min
-                                <input
-                                    type="number"
-                                    className={styles.thresholdInput}
-                                    value={values[r.id].min}
-                                    min={r.min}
-                                    max={r.max}
-                                    onChange={e => update(r.id, 'min', Number(e.target.value))}
-                                />
-                                <span className={styles.unit}>{r.unit}</span>
-                            </label>
-                            <label className={styles.thresholdLabel}>
-                                Max
-                                <input
-                                    type="number"
-                                    className={styles.thresholdInput}
-                                    value={values[r.id].max}
-                                    min={r.min}
-                                    max={r.max}
-                                    onChange={e => update(r.id, 'max', Number(e.target.value))}
-                                />
-                                <span className={styles.unit}>{r.unit}</span>
-                            </label>
-                        </div>
-                        {r.automation && (
+                {RULES.map(r => {
+                    const threshold = thresholds[r.id]
+                    const s = status[r.id] ?? 'idle'
+                    return (
+                        <div key={r.id} className={styles.card}>
+                            <h3 className={styles.cardTitle}>{r.label} Automation</h3>
+                            <p className={styles.placeholder}>
+                                {r.label} turns on when {r.sensor} {r.triggerWord}{' '}
+                                <strong>{threshold}&thinsp;{r.unit}</strong>
+                            </p>
+
+                            <div className={styles.thresholds}>
+                                <label className={styles.thresholdLabel}>
+                                    Trigger threshold
+                                    <input
+                                        type="number"
+                                        className={styles.thresholdInput}
+                                        value={threshold}
+                                        min={r.min}
+                                        max={r.max}
+                                        onChange={e => {
+                                            setThresholds(prev => ({ ...prev, [r.id]: Number(e.target.value) }))
+                                            setStatus(prev => ({ ...prev, [r.id]: 'idle' }))
+                                        }}
+                                    />
+                                    <span className={styles.unit}>{r.unit}</span>
+                                </label>
+                            </div>
+
                             <div className={styles.automationRow}>
                                 <button
                                     className={styles.applyBtn}
-                                    disabled={status[r.id] === 'sending'}
-                                    onClick={() => applyAutomation(r)}
+                                    disabled={s === 'sending'}
+                                    onClick={() => apply(r)}
                                 >
-                                    {status[r.id] === 'sending' ? 'Sending…'
-                                        : status[r.id] === 'applied' ? '✓ Applied'
-                                        : status[r.id] === 'error'   ? 'Retry'
-                                        : 'Apply Automation'}
+                                    {s === 'sending' ? 'Sending…'
+                                     : s === 'applied' ? '✓ Applied'
+                                     : s === 'error'   ? 'Retry'
+                                     : 'Apply'}
                                 </button>
-                                {status[r.id] === 'applied' && (
+
+                                {s === 'applied' && (
                                     <span className={styles.automationHint}>
-                                        Fan auto mode enabled — threshold {values[r.id].max}{r.unit}
+                                        Auto mode on — {r.label} triggers at {threshold}&thinsp;{r.unit}
                                     </span>
                                 )}
-                                {status[r.id] === 'error' && (
+                                {s === 'error' && (
                                     <span className={styles.automationError}>Failed to send command</span>
                                 )}
                             </div>
-                        )}
-                    </div>
-                ))}
+                        </div>
+                    )
+                })}
             </div>
         </DashboardLayout>
     )
