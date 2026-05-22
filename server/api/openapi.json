@@ -165,6 +165,55 @@
         ]
       }
     },
+    "/api/devices/{deviceId}/commands/pump": {
+      "post": {
+        "tags": [
+          "Command"
+        ],
+        "operationId": "Command_SendPumpCommand",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "dto",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PumpCommandDtoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/Device/status": {
       "get": {
         "tags": [
@@ -461,6 +510,19 @@
           },
           "payload": {
             "type": "string"
+          }
+        }
+      },
+      "PumpCommandDtoRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state"
+        ],
+        "properties": {
+          "state": {
+            "type": "string",
+            "minLength": 1
           }
         }
       },
