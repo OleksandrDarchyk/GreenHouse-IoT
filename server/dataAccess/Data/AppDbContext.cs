@@ -84,6 +84,46 @@ public class AppDbContext : DbContext
             entity.Property(s => s.LightLevel)
                 .HasColumnName("light_level");
 
+            entity.Property(s => s.PumpOn)
+                .HasColumnName("pump_on")
+                .HasDefaultValue(false);
+
+            entity.Property(s => s.PumpState)
+                .HasColumnName("pump_state")
+                .HasMaxLength(10)
+                .HasDefaultValue("OFF");
+
+            entity.Property(s => s.PumpAutoMode)
+                .HasColumnName("pump_auto_mode")
+                .HasDefaultValue(true);
+
+            entity.Property(s => s.PumpMode)
+                .HasColumnName("pump_mode")
+                .HasMaxLength(10)
+                .HasDefaultValue("AUTO");
+
+            entity.Property(s => s.FanOn)
+                .HasColumnName("fan_on")
+                .HasDefaultValue(false);
+
+            entity.Property(s => s.FanState)
+                .HasColumnName("fan_state")
+                .HasMaxLength(10)
+                .HasDefaultValue("OFF");
+
+            entity.Property(s => s.FanAutoMode)
+                .HasColumnName("fan_auto_mode")
+                .HasDefaultValue(false);
+
+            entity.Property(s => s.FanMode)
+                .HasColumnName("fan_mode")
+                .HasMaxLength(10)
+                .HasDefaultValue("MANUAL");
+
+            entity.Property(s => s.SoilMoistureThreshold)
+                .HasColumnName("soil_moisture_threshold")
+                .HasDefaultValue(30);
+
             entity.Property(s => s.Timestamp)
                 .HasColumnName("timestamp")
                 .HasDefaultValueSql("NOW()");

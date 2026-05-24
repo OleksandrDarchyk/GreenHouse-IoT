@@ -301,6 +301,8 @@ export interface IDeviceClient {
 
     getDeviceStatus(): Promise<FileResponse>;
 
+    getDeviceOverview(): Promise<FileResponse>;
+
     checkDevices(): Promise<FileResponse>;
 }
 
@@ -331,6 +333,44 @@ export class DeviceClient implements IDeviceClient {
     }
 
     protected processGetDeviceStatus(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
+    }
+
+    getDeviceOverview(): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/Device/overview";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetDeviceOverview(_response);
+        });
+    }
+
+    protected processGetDeviceOverview(response: Response): Promise<FileResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200 || status === 206) {
@@ -921,6 +961,15 @@ export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {
     airQuality?: number;
     lightLevel?: number;
     timestamp?: Date;
+    pumpOn?: boolean;
+    pumpState?: string;
+    pumpAutoMode?: boolean;
+    pumpMode?: string;
+    fanOn?: boolean;
+    fanState?: string;
+    fanAutoMode?: boolean;
+    fanMode?: string;
+    soilMoistureThreshold?: number;
 
     constructor(data?: ISensorReadingDtoResponse) {
         if (data) {
@@ -941,6 +990,15 @@ export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {
             this.airQuality = _data["airQuality"];
             this.lightLevel = _data["lightLevel"];
             this.timestamp = _data["timestamp"] ? new Date(_data["timestamp"].toString()) : undefined as any;
+            this.pumpOn = _data["pumpOn"];
+            this.pumpState = _data["pumpState"];
+            this.pumpAutoMode = _data["pumpAutoMode"];
+            this.pumpMode = _data["pumpMode"];
+            this.fanOn = _data["fanOn"];
+            this.fanState = _data["fanState"];
+            this.fanAutoMode = _data["fanAutoMode"];
+            this.fanMode = _data["fanMode"];
+            this.soilMoistureThreshold = _data["soilMoistureThreshold"];
         }
     }
 
@@ -961,6 +1019,15 @@ export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {
         data["airQuality"] = this.airQuality;
         data["lightLevel"] = this.lightLevel;
         data["timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        data["pumpOn"] = this.pumpOn;
+        data["pumpState"] = this.pumpState;
+        data["pumpAutoMode"] = this.pumpAutoMode;
+        data["pumpMode"] = this.pumpMode;
+        data["fanOn"] = this.fanOn;
+        data["fanState"] = this.fanState;
+        data["fanAutoMode"] = this.fanAutoMode;
+        data["fanMode"] = this.fanMode;
+        data["soilMoistureThreshold"] = this.soilMoistureThreshold;
         return data;
     }
 }
@@ -974,6 +1041,15 @@ export interface ISensorReadingDtoResponse {
     airQuality?: number;
     lightLevel?: number;
     timestamp?: Date;
+    pumpOn?: boolean;
+    pumpState?: string;
+    pumpAutoMode?: boolean;
+    pumpMode?: string;
+    fanOn?: boolean;
+    fanState?: string;
+    fanAutoMode?: boolean;
+    fanMode?: string;
+    soilMoistureThreshold?: number;
 }
 
 /** Returned by subscribe endpoints so the client knows which SSE group to listen on. */

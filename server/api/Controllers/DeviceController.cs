@@ -31,6 +31,64 @@ public class DeviceController(AppDbContext db) : ControllerBase
         return Ok(statuses);
     }
 
+    // GET /api/Device/overview — returns ESP32 online/offline + actuator states
+    [HttpGet("overview")]
+    public async Task<IActionResult> GetDeviceOverview()
+    {
+        var now = DateTime.UtcNow;
+
+        var deviceIds = await db.SensorReadings
+            .AsNoTracking()
+            .Select(s => s.DeviceId)
+            .Distinct()
+            .ToListAsync();
+
+        var result = new List<object>();
+
+        foreach (var deviceId in deviceIds)
+        {
+            var latest = await db.SensorReadings
+                .AsNoTracking()
+                .Where(s => s.DeviceId == deviceId)
+                .OrderByDescending(s => s.Timestamp)
+                .FirstOrDefaultAsync();
+
+            if (latest is null) continue;
+
+            var isOnline = (now - latest.Timestamp) < OfflineThreshold;
+
+            result.Add(new
+            {
+                deviceId = latest.DeviceId,
+                online   = isOnline,
+                lastSeen = latest.Timestamp,
+                actuators = new[]
+                {
+                    new
+                    {
+                        name         = "Water Pump",
+                        type         = "pump",
+                        state        = latest.PumpState,
+                        on           = latest.PumpOn,
+                        mode         = latest.PumpMode,
+                        controllable = isOnline,
+                    },
+                    new
+                    {
+                        name         = "Fan",
+                        type         = "fan",
+                        state        = latest.FanState,
+                        on           = latest.FanOn,
+                        mode         = latest.FanMode,
+                        controllable = isOnline,
+                    },
+                },
+            });
+        }
+
+        return Ok(result);
+    }
+
     // GET /api/Device/check — checks all devices and creates/resolves alerts
     [HttpGet("check")]
     public async Task<IActionResult> CheckDevices()
