@@ -415,6 +415,12 @@
     border: 1px solid var(--border);
 }
 
+.deviceInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 @media (max-width: 640px) {
     .grid { grid-template-columns: 1fr; }
     .alertRow { flex-wrap: wrap; gap: 8px; }

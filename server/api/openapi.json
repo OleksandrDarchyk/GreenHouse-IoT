@@ -235,6 +235,27 @@
         }
       }
     },
+    "/api/Device/overview": {
+      "get": {
+        "tags": [
+          "Device"
+        ],
+        "operationId": "Device_GetDeviceOverview",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Device/check": {
       "get": {
         "tags": [
@@ -560,6 +581,34 @@
           "timestamp": {
             "type": "string",
             "format": "date-time"
+          },
+          "pumpOn": {
+            "type": "boolean"
+          },
+          "pumpState": {
+            "type": "string"
+          },
+          "pumpAutoMode": {
+            "type": "boolean"
+          },
+          "pumpMode": {
+            "type": "string"
+          },
+          "fanOn": {
+            "type": "boolean"
+          },
+          "fanState": {
+            "type": "string"
+          },
+          "fanAutoMode": {
+            "type": "boolean"
+          },
+          "fanMode": {
+            "type": "string"
+          },
+          "soilMoistureThreshold": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

@@ -19,13 +19,22 @@ public class GreenhouseMqttController(
 
         var entity = new SensorReading
         {
-            DeviceId = deviceId,
-            Temperature = msg.Temperature,
-            Humidity = msg.Humidity,
-            SoilMoisture = msg.SoilMoisture,
-            AirQuality = msg.AirQuality,
-            LightLevel = msg.LightLevel,
-            Timestamp = DateTime.UtcNow
+            DeviceId              = deviceId,
+            Temperature           = msg.Temperature,
+            Humidity              = msg.Humidity,
+            SoilMoisture          = msg.SoilMoisture,
+            AirQuality            = msg.AirQuality,
+            LightLevel            = msg.LightLevel,
+            PumpOn                = msg.PumpOn,
+            PumpState             = string.IsNullOrWhiteSpace(msg.PumpState) ? (msg.PumpOn ? "ON" : "OFF") : msg.PumpState,
+            PumpAutoMode          = msg.PumpAutoMode,
+            PumpMode              = string.IsNullOrWhiteSpace(msg.PumpMode)  ? "AUTO"                       : msg.PumpMode,
+            FanOn                 = msg.FanOn,
+            FanState              = string.IsNullOrWhiteSpace(msg.FanState)  ? (msg.FanOn  ? "ON" : "OFF") : msg.FanState,
+            FanAutoMode           = msg.FanAutoMode,
+            FanMode               = string.IsNullOrWhiteSpace(msg.FanMode)   ? "MANUAL"                    : msg.FanMode,
+            SoilMoistureThreshold = msg.SoilMoistureThreshold,
+            Timestamp             = DateTime.UtcNow
         };
 
         db.SensorReadings.Add(entity);

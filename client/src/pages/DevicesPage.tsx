@@ -1,11 +1,7 @@
+import { Fragment } from 'react'
 import DashboardLayout from '../components/layout/DashboardLayout'
-import { useDeviceStatus, type DeviceStatus } from '../hooks/useDeviceStatus'
+import { useDeviceOverview, type DeviceOverview, type ActuatorStatus } from '../hooks/useDeviceOverview'
 import styles from './DashboardContent.module.css'
-
-const KNOWN_ACTUATORS = [
-    { deviceId: 'water-pump', label: 'Water Pump' },
-    { deviceId: 'fan',        label: 'Fan'        },
-]
 
 function formatTime(iso: string): string {
     return new Date(iso).toLocaleTimeString('en-GB', {
@@ -13,36 +9,40 @@ function formatTime(iso: string): string {
     })
 }
 
-function DeviceRow({ deviceId, label, device }: {
-    deviceId: string
-    label:    string
-    device:   DeviceStatus | undefined
-}) {
-    const isOnline = device?.isOnline ?? false
+function Esp32Row({ device }: { device: DeviceOverview }) {
     return (
         <div className={styles.deviceRow}>
-            <span className={styles.deviceName}>{label}</span>
-            {device?.lastSeen && (
-                <span className={styles.deviceLastSeen}>
-                    Last seen: {formatTime(device.lastSeen)}
-                </span>
-            )}
-            <span className={`${styles.deviceStatus} ${isOnline ? styles.deviceOnline : styles.deviceOffline}`}>
+            <span className={styles.deviceName}>{device.deviceId}</span>
+            <span className={styles.deviceLastSeen}>
+                Last seen: {formatTime(device.lastSeen)}
+            </span>
+            <span className={`${styles.deviceStatus} ${device.online ? styles.deviceOnline : styles.deviceOffline}`}>
                 <span className={styles.deviceDot} />
-                {isOnline ? 'online' : 'offline'}
+                {device.online ? 'online' : 'offline'}
+            </span>
+        </div>
+    )
+}
+
+function ActuatorRow({ actuator, esp32Online }: { actuator: ActuatorStatus; esp32Online: boolean }) {
+    return (
+        <div className={styles.deviceRow}>
+            <div className={styles.deviceInfo}>
+                <span className={styles.deviceName}>{actuator.name}</span>
+                <span className={styles.deviceLastSeen}>
+                    {esp32Online ? 'Controlled by ESP32' : 'Not controllable'}
+                </span>
+            </div>
+            <span className={styles.tag}>{actuator.mode}</span>
+            <span className={`${styles.statusDot} ${actuator.on ? styles.statusOnline : styles.statusOffline}`}>
+                {actuator.state}
             </span>
         </div>
     )
 }
 
 export default function DevicesPage() {
-    const { devices, loading, error } = useDeviceStatus()
-
-    const byId = Object.fromEntries(devices.map(d => [d.deviceId, d]))
-
-    const sensorDevices = devices.filter(
-        d => !KNOWN_ACTUATORS.some(a => a.deviceId === d.deviceId)
-    )
+    const { overview, loading, error } = useDeviceOverview()
 
     return (
         <DashboardLayout>
@@ -55,11 +55,17 @@ export default function DevicesPage() {
 
             {!loading && !error && (
                 <div className={styles.deviceList}>
-                    {sensorDevices.map(d => (
-                        <DeviceRow key={d.deviceId} deviceId={d.deviceId} label={d.deviceId} device={d} />
-                    ))}
-                    {KNOWN_ACTUATORS.map(a => (
-                        <DeviceRow key={a.deviceId} deviceId={a.deviceId} label={a.label} device={byId[a.deviceId]} />
+                    {overview.map(device => (
+                        <Fragment key={device.deviceId}>
+                            <Esp32Row device={device} />
+                            {device.actuators.map(actuator => (
+                                <ActuatorRow
+                                    key={`${device.deviceId}-${actuator.type}`}
+                                    actuator={actuator}
+                                    esp32Online={device.online}
+                                />
+                            ))}
+                        </Fragment>
                     ))}
                 </div>
             )}
