@@ -8,7 +8,6 @@ export default function DashboardPage() {
     const alertCount = sensorData ? [
         sensorData.soilMoisture.value < 35,
         sensorData.temperature.value > 30,
-        sensorData.airQuality.value > 150,
     ].filter(Boolean).length : 0
 
     return (

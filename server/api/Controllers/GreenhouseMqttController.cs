@@ -23,7 +23,6 @@ public class GreenhouseMqttController(
             Temperature           = msg.Temperature,
             Humidity              = msg.Humidity,
             SoilMoisture          = msg.SoilMoisture,
-            AirQuality            = msg.AirQuality,
             LightLevel            = msg.LightLevel,
             PumpOn                = msg.PumpOn,
             PumpState             = string.IsNullOrWhiteSpace(msg.PumpState) ? (msg.PumpOn ? "ON" : "OFF") : msg.PumpState,

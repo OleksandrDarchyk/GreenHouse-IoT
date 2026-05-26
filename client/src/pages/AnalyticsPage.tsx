@@ -11,7 +11,6 @@ const METRICS: { key: MetricKey; label: string; unit: string; color: string }[] 
     { key: 'temperature',  label: 'Temperature',  unit: '°C',  color: '#f87171' },
     { key: 'humidity',     label: 'Humidity',     unit: '%',   color: '#60a5fa' },
     { key: 'soilMoisture', label: 'Soil Moisture',unit: '%',   color: '#4ade80' },
-    { key: 'airQuality',   label: 'Air Quality',  unit: 'PPM', color: '#c084fc' },
     { key: 'lightLevel',   label: 'Light Level',  unit: 'lux', color: '#facc15' },
 ]
 

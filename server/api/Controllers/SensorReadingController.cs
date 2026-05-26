@@ -48,7 +48,6 @@ public class SensorReadingController(
                 Temperature = s.Temperature,
                 Humidity = s.Humidity,
                 SoilMoisture = s.SoilMoisture,
-                AirQuality = s.AirQuality,
                 LightLevel = s.LightLevel,
                 Timestamp = s.Timestamp
             })
@@ -90,7 +89,6 @@ public class SensorReadingController(
                         Temperature = s.Temperature,
                         Humidity = s.Humidity,
                         SoilMoisture = s.SoilMoisture,
-                        AirQuality = s.AirQuality,
                         LightLevel = s.LightLevel,
                         Timestamp = s.Timestamp
                     })
@@ -111,7 +109,6 @@ public class SensorReadingController(
                 Temperature = s.Temperature,
                 Humidity = s.Humidity,
                 SoilMoisture = s.SoilMoisture,
-                AirQuality = s.AirQuality,
                 LightLevel = s.LightLevel,
                 Timestamp = s.Timestamp
             })

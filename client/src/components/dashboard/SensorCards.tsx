@@ -10,7 +10,7 @@ const STATUS_LABEL: Record<SensorStatus, string> = {
 }
 
 const SENSOR_ORDER: Array<keyof SensorData> = [
-    'temperature', 'humidity', 'soilMoisture', 'airQuality', 'lightLevel',
+    'temperature', 'humidity', 'soilMoisture', 'lightLevel',
 ]
 
 function SensorCard({ sensorKey, reading }: { sensorKey: keyof SensorData; reading: SensorReading }) {

@@ -17,7 +17,6 @@ export interface SensorData {
     temperature: SensorReading
     humidity: SensorReading
     soilMoisture: SensorReading
-    airQuality: SensorReading
     lightLevel: SensorReading
 }
 
@@ -25,7 +24,6 @@ interface BackendReading {
     temperature: number
     humidity: number
     soilMoisture: number
-    airQuality: number
     lightLevel: number
 }
 
@@ -38,9 +36,6 @@ function humStatus(v: number): SensorStatus {
 function soilStatus(v: number): SensorStatus {
     return v < 20 ? 'critical' : v < 30 ? 'warning' : 'good'
 }
-function airStatus(v: number): SensorStatus {
-    return v > 200 ? 'critical' : v > 150 ? 'poor' : v > 100 ? 'warning' : 'normal'
-}
 function lightStatus(v: number): SensorStatus {
     return v < 100 || v > 800 ? 'warning' : 'normal'
 }
@@ -48,10 +43,9 @@ function lightStatus(v: number): SensorStatus {
 function buildReading(key: keyof SensorData, value: number): SensorReading {
     const configs = {
         temperature:  { unit: '°C',  label: 'Temperature',  icon: '🌡', color: '#f87171', status: tempStatus(value),  barPct: Math.min((value / 50) * 100, 100) },
-        humidity:     { unit: '%',   label: 'Humidity',      icon: '💧', color: '#60a5fa', status: humStatus(value),   barPct: Math.min(value, 100) },
-        soilMoisture: { unit: '%',   label: 'Soil Moisture', icon: '🌱', color: '#fbbf24', status: soilStatus(value),  barPct: Math.min(value, 100) },
-        airQuality:   { unit: 'PPM', label: 'Air Quality',   icon: '🌬', color: '#c084fc', status: airStatus(value),   barPct: Math.min((value / 250) * 100, 100) },
-        lightLevel:   { unit: 'lux', label: 'Light Level',   icon: '☀️', color: '#facc15', status: lightStatus(value), barPct: Math.min((value / 900) * 100, 100) },
+        humidity:     { unit: '%',   label: 'Humidity',     icon: '💧', color: '#60a5fa', status: humStatus(value),   barPct: Math.min(value, 100) },
+        soilMoisture: { unit: '%',   label: 'Soil Moisture',icon: '🌱', color: '#fbbf24', status: soilStatus(value),  barPct: Math.min(value, 100) },
+        lightLevel:   { unit: 'lux', label: 'Light Level',  icon: '☀️', color: '#facc15', status: lightStatus(value), barPct: Math.min((value / 900) * 100, 100) },
     }
     return { value, ...configs[key] }
 }
@@ -61,7 +55,6 @@ function mapToSensorData(raw: BackendReading): SensorData {
         temperature:  buildReading('temperature',  raw.temperature),
         humidity:     buildReading('humidity',      raw.humidity),
         soilMoisture: buildReading('soilMoisture',  raw.soilMoisture),
-        airQuality:   buildReading('airQuality',    raw.airQuality),
         lightLevel:   buildReading('lightLevel',    raw.lightLevel),
     }
 }
@@ -83,7 +76,7 @@ export function useSensorData(deviceId?: string) {
             )
             if (!res.ok) return
 
-            const { group, value } = await res.json()
+            const { group, data: value } = await res.json()  // ← fix here
             if (value) setData(mapToSensorData(value))
 
             es.addEventListener(group, (upd: MessageEvent) => {
