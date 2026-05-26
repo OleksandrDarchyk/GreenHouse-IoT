@@ -570,10 +570,6 @@
             "type": "number",
             "format": "double"
           },
-          "airQuality": {
-            "type": "number",
-            "format": "double"
-          },
           "lightLevel": {
             "type": "number",
             "format": "double"

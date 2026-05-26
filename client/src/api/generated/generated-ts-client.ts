@@ -958,7 +958,6 @@ export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {
     temperature?: number;
     humidity?: number;
     soilMoisture?: number;
-    airQuality?: number;
     lightLevel?: number;
     timestamp?: Date;
     pumpOn?: boolean;
@@ -987,7 +986,6 @@ export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {
             this.temperature = _data["temperature"];
             this.humidity = _data["humidity"];
             this.soilMoisture = _data["soilMoisture"];
-            this.airQuality = _data["airQuality"];
             this.lightLevel = _data["lightLevel"];
             this.timestamp = _data["timestamp"] ? new Date(_data["timestamp"].toString()) : undefined as any;
             this.pumpOn = _data["pumpOn"];
@@ -1016,7 +1014,6 @@ export class SensorReadingDtoResponse implements ISensorReadingDtoResponse {
         data["temperature"] = this.temperature;
         data["humidity"] = this.humidity;
         data["soilMoisture"] = this.soilMoisture;
-        data["airQuality"] = this.airQuality;
         data["lightLevel"] = this.lightLevel;
         data["timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
         data["pumpOn"] = this.pumpOn;
@@ -1038,7 +1035,6 @@ export interface ISensorReadingDtoResponse {
     temperature?: number;
     humidity?: number;
     soilMoisture?: number;
-    airQuality?: number;
     lightLevel?: number;
     timestamp?: Date;
     pumpOn?: boolean;
